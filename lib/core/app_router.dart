@@ -1,0 +1,52 @@
+import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
+
+class AppRouter {
+  static final GoRouter router = GoRouter(
+    initialLocation: '/splash',
+    routes: [
+      GoRoute(
+        path: '/splash',
+        name: 'splash',
+        builder: (context, state) =>
+            const Scaffold(body: Center(child: Text('Splash'))),
+      ),
+      GoRoute(
+        path: '/home',
+        name: 'home',
+        builder: (context, state) =>
+            const Scaffold(body: Center(child: Text('Home'))),
+      ),
+      GoRoute(
+        path: '/create-room',
+        name: 'createRoom',
+        builder: (context, state) =>
+            const Scaffold(body: Center(child: Text('Create Room'))),
+      ),
+      GoRoute(
+        path: '/join-room',
+        name: 'joinRoom',
+        builder: (context, state) =>
+            const Scaffold(body: Center(child: Text('Join Room'))),
+      ),
+      GoRoute(
+        path: '/lobby',
+        name: 'lobby',
+        builder: (context, state) =>
+            const Scaffold(body: Center(child: Text('Lobby'))),
+      ),
+      GoRoute(
+        path: '/game',
+        name: 'game',
+        builder: (context, state) =>
+            const Scaffold(body: Center(child: Text('Game'))),
+      ),
+      GoRoute(
+        path: '/summary',
+        name: 'summary',
+        builder: (context, state) =>
+            const Scaffold(body: Center(child: Text('Summary'))),
+      ),
+    ],
+  );
+}
