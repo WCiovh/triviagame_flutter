@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
+import 'package:triviagame_flutter/screens/splash/splash_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -8,8 +9,7 @@ class AppRouter {
       GoRoute(
         path: '/splash',
         name: 'splash',
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: Text('Splash'))),
+        builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
         path: '/home',
