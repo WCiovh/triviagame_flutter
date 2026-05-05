@@ -4,6 +4,7 @@ import 'package:triviagame_flutter/screens/splash/splash_screen.dart';
 import 'package:triviagame_flutter/screens/home/home_screen.dart';
 import 'package:triviagame_flutter/screens/room/create_room_screen.dart';
 import 'package:triviagame_flutter/screens/room/join_room_screen.dart';
+import 'package:triviagame_flutter/screens/room/lobby_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -32,8 +33,14 @@ class AppRouter {
       GoRoute(
         path: '/lobby',
         name: 'lobby',
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: Text('Lobby'))),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return LobbyScreen(
+            roomCode: extra['roomCode'],
+            nickname: extra['nickname'],
+            isHost: extra['isHost'],
+          );
+        },
       ),
       GoRoute(
         path: '/game',
