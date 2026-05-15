@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:triviagame_flutter/widgets/loading_widget.dart';
 import 'package:triviagame_flutter/widgets/error_widget.dart';
+import 'package:triviagame_flutter/core/services/connectivity_service.dart';
+import 'package:triviagame_flutter/widgets/offline_widget.dart';
 
 class CreateRoomScreen extends StatefulWidget {
   const CreateRoomScreen({super.key});
@@ -14,6 +16,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   final _nicknameController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isOffline = false;
 
   String _generateRoomCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -31,6 +34,13 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       ).showSnackBar(const SnackBar(content: Text('Podaj swój nick!')));
       return;
     }
+
+    final online = await ConnectivityService.isOnline();
+    if (!online) {
+      setState(() => _isOffline = true);
+      return;
+    }
+    setState(() => _isOffline = false);
 
     setState(() {
       _isLoading = true;
@@ -103,6 +113,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               ),
               if (_errorMessage != null)
                 AppErrorWidget(message: _errorMessage!, onRetry: _createRoom),
+              if (_isOffline) OfflineWidget(onRetry: _createRoom),
               const Spacer(),
               _isLoading
                   ? const LoadingWidget(message: 'Tworzenie pokoju...')
