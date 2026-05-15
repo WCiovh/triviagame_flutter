@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:triviagame_flutter/widgets/loading_widget.dart';
+import 'package:triviagame_flutter/widgets/error_widget.dart';
 
 class JoinRoomScreen extends StatefulWidget {
   const JoinRoomScreen({super.key});
@@ -13,7 +14,7 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
   final _nicknameController = TextEditingController();
   final _roomCodeController = TextEditingController();
   bool _isLoading = false;
-
+  String? _errorMessage;
   void _joinRoom() async {
     if (_nicknameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
@@ -29,19 +30,30 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      context.go(
-        '/lobby',
-        extra: {
-          'roomCode': _roomCodeController.text.trim().toUpperCase(),
-          'nickname': _nicknameController.text.trim(),
-          'isHost': false,
-        },
-      );
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) {
+        setState(() => _isLoading = false);
+        context.go(
+          '/lobby',
+          extra: {
+            'roomCode': _roomCodeController.text.trim().toUpperCase(),
+            'nickname': _nicknameController.text.trim(),
+            'isHost': false,
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Nie udało się dołączyć do pokoju. Spróbuj ponownie.';
+        });
+      }
     }
   }
 
@@ -122,6 +134,8 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
                   ),
                 ),
               ),
+              if (_errorMessage != null)
+                AppErrorWidget(message: _errorMessage!, onRetry: _joinRoom),
               const Spacer(),
               _isLoading
                   ? const LoadingWidget(message: 'Dołączanie do pokoju...')
