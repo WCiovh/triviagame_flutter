@@ -6,6 +6,7 @@ import 'package:triviagame_flutter/screens/room/create_room_screen.dart';
 import 'package:triviagame_flutter/screens/room/join_room_screen.dart';
 import 'package:triviagame_flutter/screens/room/lobby_screen.dart';
 import 'package:triviagame_flutter/screens/game/game_screen.dart';
+import 'package:triviagame_flutter/screens/summary/summary_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -57,8 +58,12 @@ class AppRouter {
       GoRoute(
         path: '/summary',
         name: 'summary',
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: Text('Summary'))),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return SummaryScreen(
+            scores: List<Map<String, dynamic>>.from(extra['scores']),
+          );
+        },
       ),
     ],
   );
