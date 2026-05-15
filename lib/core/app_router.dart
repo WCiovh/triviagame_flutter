@@ -8,7 +8,6 @@ import 'package:triviagame_flutter/screens/room/lobby_screen.dart';
 import 'package:triviagame_flutter/screens/room/qr_scanner_screen.dart';
 import 'package:triviagame_flutter/screens/game/game_screen.dart';
 import 'package:triviagame_flutter/screens/summary/summary_screen.dart';
-import 'package:triviagame_flutter/screens/room/qr_scanner_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -51,9 +50,7 @@ class AppRouter {
         name: 'qrScanner',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
-          return QrScannerScreen(
-            nickname: extra['nickname'],
-          );
+          return QrScannerScreen(nickname: extra['nickname']);
         },
       ),
       GoRoute(
@@ -75,14 +72,6 @@ class AppRouter {
           return SummaryScreen(
             scores: List<Map<String, dynamic>>.from(extra['scores']),
           );
-        },
-      ),
-      GoRoute(
-        path: '/qr-scanner',
-        name: 'qrScanner',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>;
-          return QrScannerScreen(nickname: extra['nickname']);
         },
       ),
     ],
