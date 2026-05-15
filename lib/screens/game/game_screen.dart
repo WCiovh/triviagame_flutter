@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:triviagame_flutter/widgets/timer_widget.dart';
+import 'package:triviagame_flutter/widgets/leaderboard_widget.dart';
 
 class GameScreen extends StatefulWidget {
   final String roomCode;
@@ -98,7 +99,41 @@ class _GameScreenState extends State<GameScreen> {
       if (i % 2 == 0) _scores[i]['score'] += 150;
     }
 
-    Future.delayed(const Duration(seconds: 2), _nextQuestion);
+    Future.delayed(const Duration(seconds: 2), () {
+  if (mounted) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            LeaderboardWidget(
+              scores: _scores,
+              currentNickname: widget.players[0],
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _nextQuestion();
+              },
+              child: const Text(
+                'Następne pytanie',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+});
   }
 
   void _nextQuestion() {
