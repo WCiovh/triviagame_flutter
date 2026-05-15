@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:triviagame_flutter/widgets/loading_widget.dart';
 
 class JoinRoomScreen extends StatefulWidget {
   const JoinRoomScreen({super.key});
@@ -29,7 +30,6 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
     }
 
     setState(() => _isLoading = true);
-
     await Future.delayed(const Duration(seconds: 1));
 
     if (mounted) {
@@ -124,7 +124,7 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
               ),
               const Spacer(),
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const LoadingWidget(message: 'Dołączanie do pokoju...')
                   : ElevatedButton(
                       onPressed: _joinRoom,
                       child: const Text(
