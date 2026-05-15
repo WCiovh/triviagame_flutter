@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:triviagame_flutter/widgets/timer_widget.dart';
 
 class GameScreen extends StatefulWidget {
   final String roomCode;
@@ -156,37 +157,7 @@ class _GameScreenState extends State<GameScreen> {
               // Timer
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox(
-                        width: 64,
-                        height: 64,
-                        child: CircularProgressIndicator(
-                          value: _timeLeft / 30,
-                          strokeWidth: 6,
-                          color: _timeLeft > 10
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.red,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.surface,
-                        ),
-                      ),
-                      Text(
-                        '$_timeLeft',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: _timeLeft > 10
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                children: [TimerWidget(timeLeft: _timeLeft, totalTime: 30)],
               ),
               const SizedBox(height: 24),
               // Pytanie
