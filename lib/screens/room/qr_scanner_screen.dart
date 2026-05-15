@@ -66,14 +66,11 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     final roomCode = barcode!.rawValue!;
 
     if (mounted) {
-      context.go(
-        '/lobby',
-        extra: {
-          'roomCode': roomCode,
-          'nickname': widget.nickname,
-          'isHost': false,
-        },
-      );
+      context.go('/lobby', extra: {
+        'roomCode': roomCode,
+        'nickname': widget.nickname,
+        'isHost': false,
+      });
     }
   }
 
@@ -115,6 +112,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               ),
             ),
           ),
+          // Instrukcja
           Positioned(
             bottom: 48,
             left: 0,

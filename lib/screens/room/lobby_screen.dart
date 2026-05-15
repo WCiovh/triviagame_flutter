@@ -34,9 +34,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   void _copyCode() {
     Clipboard.setData(ClipboardData(text: widget.roomCode));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Kod skopiowany!')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Kod skopiowany!')),
+    );
   }
 
   void _shareCode() {
@@ -119,9 +119,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       showDialog(
                         context: context,
                         builder: (_) => AlertDialog(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.surface,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.surface,
                           title: const Text(
                             'Kod QR pokoju',
                             textAlign: TextAlign.center,
@@ -137,7 +136,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 8,
-                                  color: Theme.of(context).colorScheme.primary,
+                                  color:
+                                      Theme.of(context).colorScheme.primary,
                                 ),
                               ),
                             ],
