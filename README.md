@@ -1,17 +1,64 @@
-# triviagame_flutter
+# 🎮 TriviaGame Flutter
 
-A new Flutter project.
+Mobilna aplikacja quizowa typu **real-time multiplayer**, w której użytkownicy rywalizują odpowiadając na pytania w czasie rzeczywistym.
 
-## Getting Started
+## 📱 Funkcjonalności
 
-This project is a starting point for a Flutter application.
+- Tworzenie i dołączanie do pokoju gry
+- Dołączanie przez **unikalny kod**, **kod QR** lub **link**
+- Rozgrywka z pytaniami i **odliczaniem czasu**
+- **Ranking po każdym pytaniu** (top 5 graczy)
+- **Podium** po zakończeniu gry (top 3)
+- Obsługa stanów: **loading**, **error**, **offline**
 
-A few resources to get you started if this is your first Flutter project:
+## 🛠️ Technologie
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- **Flutter** — framework mobilny
+- **Dart** — język programowania
+- **go_router** — nawigacja
+- **qr_flutter** — generowanie kodów QR
+- **mobile_scanner** — skanowanie kodów QR
+- **share_plus** — udostępnianie kodu pokoju
+- **permission_handler** — obsługa uprawnień
+- **connectivity_plus** — obsługa stanu offline
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 📁 Struktura projektu
+lib/
+├── core/
+│   ├── constants/       # stałe aplikacji
+│   ├── services/        # serwisy (permissions, connectivity)
+│   ├── theme/           # motyw aplikacji
+│   └── utils/           # funkcje pomocnicze
+├── models/              # modele danych
+├── providers/           # state management
+├── screens/
+│   ├── splash/          # ekran startowy
+│   ├── home/            # menu główne
+│   ├── room/            # tworzenie i dołączanie do pokoju
+│   ├── game/            # rozgrywka
+│   └── summary/         # podium i podsumowanie
+└── widgets/             # współdzielone komponenty UI
+
+## 🚀 Uruchomienie
+
+### Wymagania
+- Flutter SDK >= 3.11.5
+- Android SDK (API 21+)
+
+### Instalacja
+
+```bash
+git clone https://github.com/WCiovh/triviagame_flutter
+cd triviagame_flutter
+flutter pub get
+flutter run
+```
+
+## 📋 Uprawnienia
+
+Aplikacja wymaga następujących uprawnień:
+- **CAMERA** — skanowanie kodów QR
+
+## 👤 Autor
+
+- **WCiovh** — frontend
