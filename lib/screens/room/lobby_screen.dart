@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:triviagame_flutter/widgets/qr_widget.dart';
+import 'package:share_plus/share_plus.dart';
 
 class LobbyScreen extends StatefulWidget {
   final String roomCode;
@@ -20,14 +21,12 @@ class LobbyScreen extends StatefulWidget {
 }
 
 class _LobbyScreenState extends State<LobbyScreen> {
-  // Mockowane dane graczy
   final List<String> _players = [];
 
   @override
   void initState() {
     super.initState();
     _players.add(widget.nickname);
-    // Mockujemy dołączanie graczy po chwili
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _players.addAll(['Gracz2', 'Gracz3']));
     });
@@ -38,6 +37,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Kod skopiowany!')));
+  }
+
+  void _shareCode() {
+    SharePlus.instance.share(
+      ShareParams(
+        text: 'Dołącz do mojego pokoju TriviaGame!\nKod: ${widget.roomCode}',
+      ),
+    );
   }
 
   void _startGame() {
@@ -103,46 +110,59 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 'Dotknij aby skopiować',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(height: 16),
-              TextButton.icon(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      backgroundColor: Theme.of(context).colorScheme.surface,
-                      title: const Text(
-                        'Kod QR pokoju',
-                        textAlign: TextAlign.center,
-                      ),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          QrWidget(roomCode: widget.roomCode),
-                          const SizedBox(height: 16),
-                          Text(
-                            widget.roomCode,
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 8,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.surface,
+                          title: const Text(
+                            'Kod QR pokoju',
+                            textAlign: TextAlign.center,
                           ),
-                        ],
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Zamknij'),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              QrWidget(roomCode: widget.roomCode),
+                              const SizedBox(height: 16),
+                              Text(
+                                widget.roomCode,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 8,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Zamknij'),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.qr_code),
-                label: const Text('Pokaż kod QR'),
+                      );
+                    },
+                    icon: const Icon(Icons.qr_code),
+                    label: const Text('Pokaż QR'),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: _shareCode,
+                    icon: const Icon(Icons.share),
+                    label: const Text('Udostępnij'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
