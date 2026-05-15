@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:triviagame_flutter/widgets/qr_widget.dart';
 
 class LobbyScreen extends StatefulWidget {
   final String roomCode;
@@ -101,6 +102,45 @@ class _LobbyScreenState extends State<LobbyScreen> {
               Text(
                 'Dotknij aby skopiować',
                 style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      backgroundColor: Theme.of(context).colorScheme.surface,
+                      title: const Text(
+                        'Kod QR pokoju',
+                        textAlign: TextAlign.center,
+                      ),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          QrWidget(roomCode: widget.roomCode),
+                          const SizedBox(height: 16),
+                          Text(
+                            widget.roomCode,
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 8,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Zamknij'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.qr_code),
+                label: const Text('Pokaż kod QR'),
               ),
               const SizedBox(height: 32),
               Row(
