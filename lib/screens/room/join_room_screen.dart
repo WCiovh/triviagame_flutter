@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:triviagame_flutter/widgets/loading_widget.dart';
 import 'package:triviagame_flutter/widgets/error_widget.dart';
+import 'package:triviagame_flutter/core/services/connectivity_service.dart';
+import 'package:triviagame_flutter/widgets/offline_widget.dart';
 
 class JoinRoomScreen extends StatefulWidget {
   const JoinRoomScreen({super.key});
@@ -15,6 +17,8 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
   final _roomCodeController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isOffline = false;
+
   void _joinRoom() async {
     if (_nicknameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
@@ -29,6 +33,13 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
       );
       return;
     }
+
+    final online = await ConnectivityService.isOnline();
+    if (!online) {
+      setState(() => _isOffline = true);
+      return;
+    }
+    setState(() => _isOffline = false);
 
     setState(() {
       _isLoading = true;
@@ -136,6 +147,7 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
               ),
               if (_errorMessage != null)
                 AppErrorWidget(message: _errorMessage!, onRetry: _joinRoom),
+              if (_isOffline) OfflineWidget(onRetry: _joinRoom),
               const Spacer(),
               _isLoading
                   ? const LoadingWidget(message: 'Dołączanie do pokoju...')
