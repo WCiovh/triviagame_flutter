@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:triviagame_flutter/widgets/loading_widget.dart';
+import 'package:triviagame_flutter/widgets/error_widget.dart';
 
 class CreateRoomScreen extends StatefulWidget {
   const CreateRoomScreen({super.key});
@@ -12,6 +13,7 @@ class CreateRoomScreen extends StatefulWidget {
 class _CreateRoomScreenState extends State<CreateRoomScreen> {
   final _nicknameController = TextEditingController();
   bool _isLoading = false;
+  String? _errorMessage;
 
   String _generateRoomCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -30,20 +32,32 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    final roomCode = _generateRoomCode();
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      await Future.delayed(const Duration(seconds: 1));
+      final roomCode = _generateRoomCode();
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-      context.go(
-        '/lobby',
-        extra: {
-          'roomCode': roomCode,
-          'nickname': _nicknameController.text.trim(),
-          'isHost': true,
-        },
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        context.go(
+          '/lobby',
+          extra: {
+            'roomCode': roomCode,
+            'nickname': _nicknameController.text.trim(),
+            'isHost': true,
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Nie udało się utworzyć pokoju. Spróbuj ponownie.';
+        });
+      }
     }
   }
 
@@ -87,6 +101,8 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                   prefixIcon: Icon(Icons.person_outline),
                 ),
               ),
+              if (_errorMessage != null)
+                AppErrorWidget(message: _errorMessage!, onRetry: _createRoom),
               const Spacer(),
               _isLoading
                   ? const LoadingWidget(message: 'Tworzenie pokoju...')
