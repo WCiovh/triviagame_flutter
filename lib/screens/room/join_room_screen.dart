@@ -15,9 +15,9 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
 
   void _joinRoom() async {
     if (_nicknameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Podaj swój nick!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Podaj swój nick!')));
       return;
     }
 
@@ -34,11 +34,14 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
 
     if (mounted) {
       setState(() => _isLoading = false);
-      context.go('/lobby', extra: {
-        'roomCode': _roomCodeController.text.trim().toUpperCase(),
-        'nickname': _nicknameController.text.trim(),
-        'isHost': false,
-      });
+      context.go(
+        '/lobby',
+        extra: {
+          'roomCode': _roomCodeController.text.trim().toUpperCase(),
+          'nickname': _nicknameController.text.trim(),
+          'isHost': false,
+        },
+      );
     }
   }
 
@@ -91,6 +94,32 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Kod pokoju',
                   prefixIcon: Icon(Icons.meeting_room_outlined),
+                ),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () {
+                  if (_nicknameController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Najpierw podaj nick!')),
+                    );
+                    return;
+                  }
+                  context.go(
+                    '/qr-scanner',
+                    extra: {'nickname': _nicknameController.text.trim()},
+                  );
+                },
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('Skanuj kod QR'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 52),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
               const Spacer(),
