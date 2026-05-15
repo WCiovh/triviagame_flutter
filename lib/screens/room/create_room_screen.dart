@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:triviagame_flutter/widgets/loading_widget.dart';
 
 class CreateRoomScreen extends StatefulWidget {
   const CreateRoomScreen({super.key});
@@ -14,31 +15,35 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
 
   String _generateRoomCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = List.generate(6, (i) => chars[DateTime.now().millisecondsSinceEpoch % chars.length]);
+    final random = List.generate(
+      6,
+      (i) => chars[DateTime.now().millisecondsSinceEpoch % chars.length],
+    );
     return random.join();
   }
 
   void _createRoom() async {
     if (_nicknameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Podaj swój nick!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Podaj swój nick!')));
       return;
     }
 
     setState(() => _isLoading = true);
-
     await Future.delayed(const Duration(seconds: 1));
-
     final roomCode = _generateRoomCode();
 
     if (mounted) {
       setState(() => _isLoading = false);
-      context.go('/lobby', extra: {
-        'roomCode': roomCode,
-        'nickname': _nicknameController.text.trim(),
-        'isHost': true,
-      });
+      context.go(
+        '/lobby',
+        extra: {
+          'roomCode': roomCode,
+          'nickname': _nicknameController.text.trim(),
+          'isHost': true,
+        },
+      );
     }
   }
 
@@ -84,7 +89,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               ),
               const Spacer(),
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const LoadingWidget(message: 'Tworzenie pokoju...')
                   : ElevatedButton(
                       onPressed: _createRoom,
                       child: const Text(
