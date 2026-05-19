@@ -1,5 +1,4 @@
 import 'package:go_router/go_router.dart';
-import 'package:flutter/material.dart';
 import 'package:triviagame_flutter/screens/splash/splash_screen.dart';
 import 'package:triviagame_flutter/screens/home/home_screen.dart';
 import 'package:triviagame_flutter/screens/room/create_room_screen.dart';
