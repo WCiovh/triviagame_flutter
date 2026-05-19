@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:triviagame_flutter/l10n/app_localizations.dart';
 
 class OfflineWidget extends StatelessWidget {
   final VoidCallback? onRetry;
@@ -7,6 +8,7 @@ class OfflineWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -20,13 +22,13 @@ class OfflineWidget extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Brak połączenia',
+              l10n.noConnection,
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Sprawdź połączenie z internetem i spróbuj ponownie.',
+              l10n.checkInternetConnection,
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -35,9 +37,9 @@ class OfflineWidget extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text(
-                  'Spróbuj ponownie',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                label: Text(
+                  l10n.tryAgain,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ],

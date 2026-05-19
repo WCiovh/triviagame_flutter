@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:triviagame_flutter/core/services/permission_service.dart';
 import 'package:triviagame_flutter/core/services/room_api_service.dart';
+import 'package:triviagame_flutter/l10n/app_localizations.dart';
 
 class QrScannerScreen extends StatefulWidget {
   final String nickname;
@@ -35,28 +36,27 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       return;
     }
     if (!granted && mounted) {
+      final l10n = AppLocalizations.of(context)!;
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (_) => AlertDialog(
-          title: const Text('Brak uprawnień'),
-          content: const Text(
-            'Aplikacja potrzebuje dostępu do kamery aby skanować kody QR.',
-          ),
+          title: Text(l10n.noPermissions),
+          content: Text(l10n.cameraPermissionNeeded),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
                 context.go('/join-room');
               },
-              child: const Text('Anuluj'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
                 PermissionService.openSettings();
               },
-              child: const Text('Otwórz ustawienia'),
+              child: Text(l10n.openSettings),
             ),
           ],
         ),
@@ -109,9 +109,10 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Skanuj kod QR'),
+        title: Text(l10n.scanQrCode),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/join-room'),
@@ -144,15 +145,15 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           if (_isJoining)
             Container(
               color: Colors.black54,
-              child: const Center(
+              child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(color: Colors.white),
-                    SizedBox(height: 16),
+                    const CircularProgressIndicator(color: Colors.white),
+                    const SizedBox(height: 16),
                     Text(
-                      'Dołączanie do pokoju...',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                      l10n.joiningRoom,
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ],
                 ),
@@ -182,7 +183,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               left: 0,
               right: 0,
               child: Text(
-                'Skieruj kamerę na kod QR pokoju',
+                l10n.pointCameraAtQr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
@@ -190,7 +191,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                   fontWeight: FontWeight.bold,
                   shadows: [
                     Shadow(
-                        color: Colors.black.withOpacity(0.8), blurRadius: 8),
+                        color: Colors.black.withValues(alpha: 0.8), blurRadius: 8),
                   ],
                 ),
               ),

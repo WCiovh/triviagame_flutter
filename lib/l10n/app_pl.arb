@@ -1,0 +1,110 @@
+{
+  "@@locale": "pl",
+
+  "appSubtitle": "Real-time multiplayer quiz",
+
+  "yes": "Tak",
+  "no": "Nie",
+  "cancel": "Anuluj",
+  "close": "Zamknij",
+  "tryAgain": "Spróbuj ponownie",
+  "host": "Host",
+
+  "points": "{score} pkt",
+  "@points": {
+    "placeholders": {
+      "score": { "type": "int" }
+    }
+  },
+
+  "exitAppTitle": "Wyjść z aplikacji?",
+  "createRoom": "Utwórz pokój",
+  "joinRoom": "Dołącz do pokoju",
+
+  "whatsYourName": "Jak masz na imię?",
+  "nicknameVisible": "Twój nick będzie widoczny dla innych graczy.",
+  "nickLabel": "Nick",
+  "categoryLabel": "Kategoria",
+  "anyCategory": "Dowolna kategoria",
+  "creatingRoom": "Tworzenie pokoju...",
+  "enterNickname": "Podaj swój nick!",
+
+  "roomCodeMustBe6": "Kod pokoju musi mieć 6 znaków!",
+  "joinGame": "Dołącz do gry",
+  "enterNicknameAndCode": "Podaj nick i kod pokoju aby dołączyć.",
+  "roomCodeLabel": "Kod pokoju",
+  "enterNicknameFirst": "Najpierw podaj nick!",
+  "scanQrCode": "Skanuj kod QR",
+  "joiningRoom": "Dołączanie do pokoju...",
+  "join": "Dołącz",
+
+  "hostClosedRoom": "Host zamknął pokój.",
+  "connectionFailed": "Nie udało się połączyć z serwerem. Sprawdź połączenie.",
+  "startGameFailed": "Nie udało się rozpocząć gry.",
+  "codeCopied": "Kod skopiowany!",
+  "shareRoomText": "Dołącz do mojego pokoju TriviaGame!\nKod: {roomCode}",
+  "@shareRoomText": {
+    "placeholders": {
+      "roomCode": { "type": "String" }
+    }
+  },
+  "closeRoomTitle": "Zamknąć pokój?",
+  "closeRoomContent": "Wszyscy gracze zostaną rozłączeni.",
+  "lobby": "Lobby",
+  "connectingToRoom": "Łączenie z pokojem...",
+  "tapToCopy": "Dotknij aby skopiować",
+  "roomQrCode": "Kod QR pokoju",
+  "showQr": "Pokaż QR",
+  "share": "Udostępnij",
+  "playersCount": "Gracze ({count})",
+  "@playersCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "waitingForHost": "Czekam na hosta...",
+  "startGame": "Rozpocznij grę",
+  "leaveRoom": "Opuść pokój",
+
+  "leaveGameTitle": "Opuścić grę?",
+  "leaveGameContent": "Twój postęp zostanie utracony.",
+  "questionProgress": "Pytanie {current}/{total}",
+  "@questionProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "roomLabel": "Pokój: {roomCode}",
+  "@roomLabel": {
+    "placeholders": {
+      "roomCode": { "type": "String" }
+    }
+  },
+  "timeUp": "Czas minął!",
+  "waitingForOtherPlayers": "Czekam na pozostałych graczy...",
+  "didNotAnswer": "Nie odpowiedziałeś",
+  "yourAnswer": "Twoja odpowiedź",
+  "correctAnswer": "Poprawna odpowiedź",
+  "submitAnswerFailed": "Nie udało się wysłać odpowiedzi.",
+  "nextQuestion": "Następne pytanie",
+
+  "gameOver": "Koniec gry!",
+  "podium": "🏆 Podium",
+  "backToMenu": "Powrót do menu",
+  "categoryForNextGame": "Kategoria na następną grę",
+  "playAgain": "Zagraj ponownie",
+  "waitingForHostLong": "Oczekuję na hosta...",
+
+  "noPermissions": "Brak uprawnień",
+  "cameraPermissionNeeded": "Aplikacja potrzebuje dostępu do kamery aby skanować kody QR.",
+  "openSettings": "Otwórz ustawienia",
+  "pointCameraAtQr": "Skieruj kamerę na kod QR pokoju",
+
+  "somethingWentWrong": "Coś poszło nie tak",
+
+  "noConnection": "Brak połączenia",
+  "checkInternetConnection": "Sprawdź połączenie z internetem i spróbuj ponownie.",
+
+  "ranking": "Ranking"
+}

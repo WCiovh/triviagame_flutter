@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:triviagame_flutter/core/services/game_hub_service.dart';
 import 'package:triviagame_flutter/core/services/room_api_service.dart';
+import 'package:triviagame_flutter/l10n/app_localizations.dart';
 
 class SummaryScreen extends StatefulWidget {
   final List<Map<String, dynamic>> scores;
@@ -115,6 +116,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final sorted = [...widget.scores]
       ..sort((a, b) => (b['score'] as int).compareTo(a['score'] as int));
     final top3 = sorted.take(3).toList();
@@ -126,7 +128,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Koniec gry!'),
+          title: Text(l10n.gameOver),
           automaticallyImplyLeading: false,
         ),
         body: SafeArea(
@@ -135,7 +137,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
             child: Column(
               children: [
                 Text(
-                  '🏆 Podium',
+                  l10n.podium,
                   style: Theme.of(context).textTheme.displayLarge,
                   textAlign: TextAlign.center,
                 ),
@@ -202,7 +204,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
                               ),
                             ),
                             Text(
-                              '${player['score']} pkt',
+                              l10n.points(player['score'] as int),
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -229,9 +231,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
                   ),
                 ElevatedButton(
                   onPressed: _leaveGame,
-                  child: const Text(
-                    'Powrót do menu',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Text(
+                    l10n.backToMenu,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
                 if (widget.isHost && widget.roomCode != null) ...[
@@ -240,15 +242,15 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     DropdownButtonFormField<int?>(
                       initialValue: _selectedCategoryId,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Kategoria na następną grę',
-                        prefixIcon: Icon(Icons.category_outlined),
+                      decoration: InputDecoration(
+                        labelText: l10n.categoryForNextGame,
+                        prefixIcon: const Icon(Icons.category_outlined),
                         isDense: true,
                       ),
                       items: [
-                        const DropdownMenuItem<int?>(
+                        DropdownMenuItem<int?>(
                           value: null,
-                          child: Text('Dowolna kategoria'),
+                          child: Text(l10n.anyCategory),
                         ),
                         ..._categories.map((cat) => DropdownMenuItem<int?>(
                               value: cat['id'] as int,
@@ -273,9 +275,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          child: const Text(
-                            'Zagraj ponownie',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          child: Text(
+                            l10n.playAgain,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                 ] else if (!widget.isHost) ...[
@@ -290,7 +292,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'Oczekuję na hosta...',
+                        l10n.waitingForHostLong,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.secondary,
                           fontSize: 13,
@@ -325,6 +327,7 @@ class _PodiumItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -337,7 +340,7 @@ class _PodiumItem extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         Text(
-          '$score pkt',
+          l10n.points(score),
           style: TextStyle(
             fontSize: 12,
             color: Theme.of(context).colorScheme.primary,

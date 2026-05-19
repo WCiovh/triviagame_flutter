@@ -1,0 +1,110 @@
+{
+  "@@locale": "en",
+
+  "appSubtitle": "Real-time multiplayer quiz",
+
+  "yes": "Yes",
+  "no": "No",
+  "cancel": "Cancel",
+  "close": "Close",
+  "tryAgain": "Try again",
+  "host": "Host",
+
+  "points": "{score} pts",
+  "@points": {
+    "placeholders": {
+      "score": { "type": "int" }
+    }
+  },
+
+  "exitAppTitle": "Exit the app?",
+  "createRoom": "Create room",
+  "joinRoom": "Join room",
+
+  "whatsYourName": "What's your name?",
+  "nicknameVisible": "Your nickname will be visible to other players.",
+  "nickLabel": "Nickname",
+  "categoryLabel": "Category",
+  "anyCategory": "Any category",
+  "creatingRoom": "Creating room...",
+  "enterNickname": "Enter your nickname!",
+
+  "roomCodeMustBe6": "Room code must be 6 characters!",
+  "joinGame": "Join game",
+  "enterNicknameAndCode": "Enter your nickname and room code to join.",
+  "roomCodeLabel": "Room code",
+  "enterNicknameFirst": "Enter your nickname first!",
+  "scanQrCode": "Scan QR code",
+  "joiningRoom": "Joining room...",
+  "join": "Join",
+
+  "hostClosedRoom": "Host closed the room.",
+  "connectionFailed": "Failed to connect to server. Check your connection.",
+  "startGameFailed": "Failed to start the game.",
+  "codeCopied": "Code copied!",
+  "shareRoomText": "Join my TriviaGame room!\nCode: {roomCode}",
+  "@shareRoomText": {
+    "placeholders": {
+      "roomCode": { "type": "String" }
+    }
+  },
+  "closeRoomTitle": "Close room?",
+  "closeRoomContent": "All players will be disconnected.",
+  "lobby": "Lobby",
+  "connectingToRoom": "Connecting to room...",
+  "tapToCopy": "Tap to copy",
+  "roomQrCode": "Room QR code",
+  "showQr": "Show QR",
+  "share": "Share",
+  "playersCount": "Players ({count})",
+  "@playersCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "waitingForHost": "Waiting for host...",
+  "startGame": "Start game",
+  "leaveRoom": "Leave room",
+
+  "leaveGameTitle": "Leave game?",
+  "leaveGameContent": "Your progress will be lost.",
+  "questionProgress": "Question {current}/{total}",
+  "@questionProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "roomLabel": "Room: {roomCode}",
+  "@roomLabel": {
+    "placeholders": {
+      "roomCode": { "type": "String" }
+    }
+  },
+  "timeUp": "Time's up!",
+  "waitingForOtherPlayers": "Waiting for other players...",
+  "didNotAnswer": "Did not answer",
+  "yourAnswer": "Your answer",
+  "correctAnswer": "Correct answer",
+  "submitAnswerFailed": "Failed to submit answer.",
+  "nextQuestion": "Next question",
+
+  "gameOver": "Game over!",
+  "podium": "🏆 Podium",
+  "backToMenu": "Back to menu",
+  "categoryForNextGame": "Category for next game",
+  "playAgain": "Play again",
+  "waitingForHostLong": "Waiting for host...",
+
+  "noPermissions": "No permissions",
+  "cameraPermissionNeeded": "The app needs camera access to scan QR codes.",
+  "openSettings": "Open settings",
+  "pointCameraAtQr": "Point camera at the room QR code",
+
+  "somethingWentWrong": "Something went wrong",
+
+  "noConnection": "No connection",
+  "checkInternetConnection": "Check your internet connection and try again.",
+
+  "ranking": "Ranking"
+}

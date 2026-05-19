@@ -17,11 +17,9 @@ class AppTheme {
     colorScheme: const ColorScheme.dark(
       primary: primary,
       secondary: secondary,
-      background: background,
       surface: surface,
       error: error,
       onPrimary: onPrimary,
-      onBackground: onBackground,
       onSurface: onSurface,
     ),
     scaffoldBackgroundColor: background,
@@ -63,7 +61,7 @@ class AppTheme {
         fontWeight: FontWeight.w600,
       ),
       bodyMedium: TextStyle(
-        color: onBackground,
+        color: onSurface,
         fontSize: 16,
         fontWeight: FontWeight.w500,
       ),

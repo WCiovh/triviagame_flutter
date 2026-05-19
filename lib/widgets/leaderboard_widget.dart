@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:triviagame_flutter/l10n/app_localizations.dart';
 
 class LeaderboardWidget extends StatelessWidget {
   final List<Map<String, dynamic>> scores;
@@ -12,6 +13,7 @@ class LeaderboardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final sorted = [...scores]
       ..sort((a, b) => (b['score'] as int).compareTo(a['score'] as int));
     final top5 = sorted.take(5).toList();
@@ -26,7 +28,7 @@ class LeaderboardWidget extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Ranking',
+              l10n.ranking,
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
@@ -43,7 +45,7 @@ class LeaderboardWidget extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: isMe
-                    ? Theme.of(context).colorScheme.primary.withOpacity(0.15)
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
                     : Colors.transparent,
                 border: Border(
                   bottom: BorderSide(
@@ -54,7 +56,6 @@ class LeaderboardWidget extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  // Pozycja
                   SizedBox(
                     width: 32,
                     child: Text(
@@ -64,7 +65,6 @@ class LeaderboardWidget extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Nick
                   Expanded(
                     child: Text(
                       player['nickname'],
@@ -78,15 +78,14 @@ class LeaderboardWidget extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Punkty
                   Text(
-                    '${player['score']} pkt',
+                    l10n.points(player['score'] as int),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: isMe
                           ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onBackground,
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:triviagame_flutter/core/services/game_hub_service.dart';
+import 'package:triviagame_flutter/l10n/app_localizations.dart';
 import 'package:triviagame_flutter/models/question_model.dart';
 import 'package:triviagame_flutter/widgets/leaderboard_widget.dart';
 import 'package:triviagame_flutter/widgets/timer_widget.dart';
@@ -174,7 +175,7 @@ class _GameScreenState extends State<GameScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nie udało się wysłać odpowiedzi.')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.submitAnswerFailed)),
         );
       }
     }
@@ -187,7 +188,7 @@ class _GameScreenState extends State<GameScreen> {
     } catch (_) {}
   }
 
-  Widget _buildResultBanner() {
+  Widget _buildResultBanner(AppLocalizations l10n) {
     final isCorrect = _selectedAnswer != null && _selectedAnswer == _correctAnswer;
     final didAnswer = _selectedAnswer != null;
 
@@ -196,7 +197,7 @@ class _GameScreenState extends State<GameScreen> {
         : isCorrect
             ? Colors.green.shade800
             : Colors.red.shade800;
-    final String topLabel = !didAnswer ? 'Nie odpowiedziałeś' : 'Twoja odpowiedź';
+    final String topLabel = !didAnswer ? l10n.didNotAnswer : l10n.yourAnswer;
     final String topValue = didAnswer ? (_selectedAnswer ?? '') : '';
 
     return Column(
@@ -236,8 +237,8 @@ class _GameScreenState extends State<GameScreen> {
           ),
           child: Column(
             children: [
-              const Text('Poprawna odpowiedź',
-                  style: TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(l10n.correctAnswer,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
               const SizedBox(height: 4),
               Text(
                 _correctAnswer ?? '',
@@ -275,6 +276,7 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -283,16 +285,16 @@ class _GameScreenState extends State<GameScreen> {
         showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Opuścić grę?'),
-            content: const Text('Twój postęp zostanie utracony.'),
+            title: Text(l10n.leaveGameTitle),
+            content: Text(l10n.leaveGameContent),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Nie'),
+                child: Text(l10n.no),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Tak'),
+                child: Text(l10n.yes),
               ),
             ],
           ),
@@ -304,23 +306,23 @@ class _GameScreenState extends State<GameScreen> {
         });
       },
       child: _phase == _GamePhase.roundResult
-          ? _buildRoundResult()
-          : _buildQuestion(),
+          ? _buildRoundResult(l10n)
+          : _buildQuestion(l10n),
     );
   }
 
-  Widget _buildQuestion() {
+  Widget _buildQuestion(AppLocalizations l10n) {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(
-            'Pytanie ${_currentQuestion.index + 1}/${_currentQuestion.total}'),
+        title: Text(l10n.questionProgress(
+            _currentQuestion.index + 1, _currentQuestion.total)),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: Center(
               child: Text(
-                'Pokój: ${widget.roomCode}',
+                l10n.roomLabel(widget.roomCode),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.secondary,
                   fontSize: 12,
@@ -372,7 +374,7 @@ class _GameScreenState extends State<GameScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'Czas minął!',
+                    l10n.timeUp,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                       fontWeight: FontWeight.bold,
@@ -384,7 +386,7 @@ class _GameScreenState extends State<GameScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'Czekam na pozostałych graczy...',
+                    l10n.waitingForOtherPlayers,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.secondary,
                       fontSize: 14,
@@ -438,19 +440,19 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  Widget _buildRoundResult() {
+  Widget _buildRoundResult(AppLocalizations l10n) {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(
-            'Pytanie ${_currentQuestion.index + 1}/${_currentQuestion.total}'),
+        title: Text(l10n.questionProgress(
+            _currentQuestion.index + 1, _currentQuestion.total)),
       ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Column(
             children: [
-              _buildResultBanner(),
+              _buildResultBanner(l10n),
               const SizedBox(height: 24),
               Expanded(
                 child: LeaderboardWidget(
@@ -475,7 +477,7 @@ class _GameScreenState extends State<GameScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Czekam na pozostałych graczy...',
+                      l10n.waitingForOtherPlayers,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.secondary,
                       ),
@@ -485,9 +487,9 @@ class _GameScreenState extends State<GameScreen> {
               else
                 ElevatedButton(
                   onPressed: _onNextQuestion,
-                  child: const Text(
-                    'Następne pytanie',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Text(
+                    l10n.nextQuestion,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               const SizedBox(height: 8),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:triviagame_flutter/core/services/game_hub_service.dart';
+import 'package:triviagame_flutter/l10n/app_localizations.dart';
 import 'package:triviagame_flutter/models/player_model.dart';
 import 'package:triviagame_flutter/widgets/qr_widget.dart';
 
@@ -85,7 +86,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       if (!mounted) return;
       GameHubService.clearCallbacks();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Host zamknął pokój.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.hostClosedRoom)),
       );
       GoRouter.of(context).go('/home');
     };
@@ -127,8 +128,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       if (mounted) {
         setState(() {
           _isConnecting = false;
-          _errorMessage =
-              'Nie udało się połączyć z serwerem. Sprawdź połączenie.';
+          _errorMessage = AppLocalizations.of(context)!.connectionFailed;
         });
       }
     }
@@ -145,7 +145,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       if (mounted) {
         setState(() {
           _isStarting = false;
-          _errorMessage = 'Nie udało się rozpocząć gry.';
+          _errorMessage = AppLocalizations.of(context)!.startGameFailed;
         });
       }
     }
@@ -154,15 +154,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
   void _copyCode() {
     Clipboard.setData(ClipboardData(text: widget.roomCode));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Kod skopiowany!')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.codeCopied)),
     );
   }
 
   void _shareCode() {
+    final l10n = AppLocalizations.of(context)!;
     SharePlus.instance.share(
       ShareParams(
-        text:
-            'Dołącz do mojego pokoju TriviaGame!\nKod: ${widget.roomCode}',
+        text: l10n.shareRoomText(widget.roomCode),
       ),
     );
   }
@@ -178,6 +178,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -187,16 +188,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
           showDialog<bool>(
             context: context,
             builder: (ctx) => AlertDialog(
-              title: const Text('Zamknąć pokój?'),
-              content: const Text('Wszyscy gracze zostaną rozłączeni.'),
+              title: Text(l10n.closeRoomTitle),
+              content: Text(l10n.closeRoomContent),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Nie'),
+                  child: Text(l10n.no),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Tak'),
+                  child: Text(l10n.yes),
                 ),
               ],
             ),
@@ -213,280 +214,277 @@ class _LobbyScreenState extends State<LobbyScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Lobby'),
+          title: Text(l10n.lobby),
           automaticallyImplyLeading: false,
         ),
-      body: SafeArea(
-        child: _isConnecting
-            ? const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Łączenie z pokojem...'),
-                  ],
-                ),
-              )
-            : Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24, vertical: 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text('Kod pokoju',
-                        style: Theme.of(context).textTheme.bodyMedium),
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: _copyCode,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 32, vertical: 16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 2,
+        body: SafeArea(
+          child: _isConnecting
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(l10n.connectingToRoom),
+                    ],
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(l10n.roomCodeLabel,
+                          style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: _copyCode,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 32, vertical: 16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.roomCode,
+                                style: TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  letterSpacing: 8,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Icon(Icons.copy,
+                                  color: Theme.of(context).colorScheme.primary),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              widget.roomCode,
-                              style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
-                                letterSpacing: 8,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Icon(Icons.copy,
-                                color:
-                                    Theme.of(context).colorScheme.primary),
-                          ],
-                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text('Dotknij aby skopiować',
-                        style: Theme.of(context).textTheme.bodyMedium),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TextButton.icon(
-                          onPressed: () => showDialog(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.surface,
-                              title: const Text('Kod QR pokoju',
-                                  textAlign: TextAlign.center),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  QrWidget(roomCode: widget.roomCode),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    widget.roomCode,
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 8,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary,
+                      const SizedBox(height: 8),
+                      Text(l10n.tapToCopy,
+                          style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => showDialog(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.surface,
+                                title: Text(l10n.roomQrCode,
+                                    textAlign: TextAlign.center),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    QrWidget(roomCode: widget.roomCode),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      widget.roomCode,
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 8,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                      ),
                                     ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text(l10n.close),
                                   ),
                                 ],
                               ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Zamknij'),
-                                ),
-                              ],
                             ),
+                            icon: const Icon(Icons.qr_code),
+                            label: Text(l10n.showQr),
                           ),
-                          icon: const Icon(Icons.qr_code),
-                          label: const Text('Pokaż QR'),
+                          const SizedBox(width: 8),
+                          TextButton.icon(
+                            onPressed: _shareCode,
+                            icon: const Icon(Icons.share),
+                            label: Text(l10n.share),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      if (_categoryName != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.category_outlined,
+                                size: 14,
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _categoryName!,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.secondary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        TextButton.icon(
-                          onPressed: _shareCode,
-                          icon: const Icon(Icons.share),
-                          label: const Text('Udostępnij'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (_categoryName != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.category_outlined,
-                              size: 14,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
-                            const SizedBox(width: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            l10n.playersCount(_players.length),
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          if (!widget.isHost)
                             Text(
-                              _categoryName!,
+                              l10n.waitingForHost,
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.secondary,
-                                fontSize: 13,
+                                fontSize: 12,
                               ),
                             ),
-                          ],
-                        ),
+                        ],
                       ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+                      if (_errorMessage != null) ...[
+                        const SizedBox(height: 8),
                         Text(
-                          'Gracze (${_players.length})',
-                          style: Theme.of(context).textTheme.titleLarge,
+                          _errorMessage!,
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.error),
+                          textAlign: TextAlign.center,
                         ),
-                        if (!widget.isHost)
-                          Text(
-                            'Czekam na hosta...',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.secondary,
-                              fontSize: 12,
-                            ),
-                          ),
                       ],
-                    ),
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        _errorMessage!,
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.error),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: ListView.separated(
-                        itemCount: _players.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final player = _players[index];
-                          final isMe =
-                              player.uuid == widget.playerUuid;
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(12),
-                              border: isMe
-                                  ? Border.all(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary)
-                                  : null,
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.person,
-                                  color: isMe
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  player.displayName,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: isMe
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                    color: isMe
-                                        ? Theme.of(context)
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: ListView.separated(
+                          itemCount: _players.length,
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final player = _players[index];
+                            final isMe = player.uuid == widget.playerUuid;
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: isMe
+                                    ? Border.all(
+                                        color: Theme.of(context)
                                             .colorScheme
-                                            .primary
+                                            .primary)
+                                    : null,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.person,
+                                    color: isMe
+                                        ? Theme.of(context).colorScheme.primary
                                         : Theme.of(context)
                                             .colorScheme
                                             .onSurface,
                                   ),
-                                ),
-                                if (index == 0) ...[
-                                  const Spacer(),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary,
-                                      borderRadius:
-                                          BorderRadius.circular(8),
-                                    ),
-                                    child: const Text(
-                                      'Host',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    player.displayName,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: isMe
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      color: isMe
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
                                     ),
                                   ),
+                                  if (index == 0) ...[
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        l10n.host,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (widget.isHost)
-                      _isStarting
-                          ? const CircularProgressIndicator()
-                          : ElevatedButton(
-                              onPressed:
-                                  _players.length >= 2 ? _startGame : null,
-                              child: const Text(
-                                'Rozpocznij grę',
-                                style:
-                                    TextStyle(fontWeight: FontWeight.bold),
                               ),
-                            )
-                    else
-                      OutlinedButton(
-                        onPressed: () {
-                          GameHubService.disconnect();
-                          context.go('/home');
-                        },
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 52),
-                          side: BorderSide(
-                              color: Theme.of(context).colorScheme.error),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                            );
+                          },
                         ),
-                        child: Text(
-                          'Opuść pokój',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                            fontWeight: FontWeight.bold,
+                      ),
+                      const SizedBox(height: 16),
+                      if (widget.isHost)
+                        _isStarting
+                            ? const CircularProgressIndicator()
+                            : ElevatedButton(
+                                onPressed:
+                                    _players.length >= 2 ? _startGame : null,
+                                child: Text(
+                                  l10n.startGame,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              )
+                      else
+                        OutlinedButton(
+                          onPressed: () {
+                            GameHubService.disconnect();
+                            context.go('/home');
+                          },
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 52),
+                            side: BorderSide(
+                                color: Theme.of(context).colorScheme.error),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: Text(
+                            l10n.leaveRoom,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-      ),
+        ),
       ),
     );
   }
