@@ -11,6 +11,10 @@ enum _GamePhase { question, roundResult }
 class GameScreen extends StatefulWidget {
   final String roomCode;
   final String playerUuid;
+  final String nickname;
+  final bool isHost;
+  final int? categoryId;
+  final String? categoryName;
   final List<Map<String, dynamic>> players;
   final Map<String, dynamic> initialQuestion;
 
@@ -18,6 +22,10 @@ class GameScreen extends StatefulWidget {
     super.key,
     required this.roomCode,
     required this.playerUuid,
+    required this.nickname,
+    required this.isHost,
+    this.categoryId,
+    this.categoryName,
     required this.players,
     required this.initialQuestion,
   });
@@ -33,6 +41,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _answered = false;
   bool _waitingForOthers = false;
   Timer? _timer;
+  Timer? _autoAdvanceTimer;
 
   _GamePhase _phase = _GamePhase.question;
   String? _correctAnswer;
@@ -62,7 +71,6 @@ class _GameScreenState extends State<GameScreen> {
       if (!mounted) return;
       setState(() {
         _waitingForOthers = true;
-        _timer?.cancel();
       });
     };
 
@@ -103,6 +111,10 @@ class _GameScreenState extends State<GameScreen> {
         _applyNextQuestion(data);
       } else {
         setState(() => _bufferedQuestion = data);
+        _autoAdvanceTimer?.cancel();
+        _autoAdvanceTimer = Timer(const Duration(seconds: 10), () {
+          if (mounted) _onNextQuestion();
+        });
       }
     };
 
@@ -114,7 +126,13 @@ class _GameScreenState extends State<GameScreen> {
                 'score': p['points'] as int,
               })
           .toList();
-      context.go('/summary', extra: {'scores': summaryScores});
+      context.go('/summary', extra: {
+        'scores': summaryScores,
+        'nickname': widget.nickname,
+        'isHost': widget.isHost,
+        'categoryId': widget.categoryId,
+        'categoryName': widget.categoryName,
+      });
     };
 
     GameHubService.onError = (error) {
@@ -172,11 +190,79 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _onNextQuestion() {
+    _autoAdvanceTimer?.cancel();
     if (_bufferedQuestion != null) {
       _applyNextQuestion(_bufferedQuestion!);
     } else {
       setState(() => _waitingForNextQuestion = true);
     }
+  }
+
+  Widget _buildResultBanner() {
+    final isCorrect = _selectedAnswer != null && _selectedAnswer == _correctAnswer;
+    final didAnswer = _selectedAnswer != null;
+
+    final Color topColor = !didAnswer
+        ? Colors.orange.shade800
+        : isCorrect
+            ? Colors.green.shade800
+            : Colors.red.shade800;
+    final String topLabel = !didAnswer ? 'Nie odpowiedziałeś' : 'Twoja odpowiedź';
+    final String topValue = didAnswer ? (_selectedAnswer ?? '') : '';
+
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: topColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Column(
+            children: [
+              Text(topLabel,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              if (didAnswer) ...[
+                const SizedBox(height: 4),
+                Text(
+                  topValue,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
+          ),
+        ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.green.shade800,
+            borderRadius:
+                const BorderRadius.vertical(bottom: Radius.circular(16)),
+          ),
+          child: Column(
+            children: [
+              const Text('Poprawna odpowiedź',
+                  style: TextStyle(color: Colors.white70, fontSize: 12)),
+              const SizedBox(height: 4),
+              Text(
+                _correctAnswer ?? '',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   Color _getAnswerColor(String answer) {
@@ -191,6 +277,7 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _autoAdvanceTimer?.cancel();
     GameHubService.clearCallbacks();
     GameHubService.disconnect();
     super.dispose();
@@ -198,10 +285,38 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_phase == _GamePhase.roundResult) {
-      return _buildRoundResult();
-    }
-    return _buildQuestion();
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final router = GoRouter.of(context);
+        showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Opuścić grę?'),
+            content: const Text('Twój postęp zostanie utracony.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Nie'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Tak'),
+              ),
+            ],
+          ),
+        ).then((confirmed) {
+          if (confirmed == true && mounted) {
+            GameHubService.disconnect();
+            router.go('/home');
+          }
+        });
+      },
+      child: _phase == _GamePhase.roundResult
+          ? _buildRoundResult()
+          : _buildQuestion(),
+    );
   }
 
   Widget _buildQuestion() {
@@ -345,49 +460,7 @@ class _GameScreenState extends State<GameScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Column(
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade800,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'Poprawna odpowiedź',
-                      style: TextStyle(
-                        color: Colors.green.shade200,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _correctAnswer ?? '',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    if (_selectedAnswer != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        _selectedAnswer == _correctAnswer
-                            ? 'Dobra odpowiedź! +punkty'
-                            : 'Twoja odpowiedź: $_selectedAnswer',
-                        style: TextStyle(
-                          color: _selectedAnswer == _correctAnswer
-                              ? Colors.green.shade200
-                              : Colors.red.shade200,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+              _buildResultBanner(),
               const SizedBox(height: 24),
               Expanded(
                 child: LeaderboardWidget(

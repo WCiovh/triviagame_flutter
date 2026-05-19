@@ -43,6 +43,8 @@ class AppRouter {
             nickname: extra['nickname'] as String,
             isHost: extra['isHost'] as bool,
             playerUuid: extra['playerUuid'] as String,
+            categoryId: extra['categoryId'] as int?,
+            categoryName: extra['categoryName'] as String?,
           );
         },
       ),
@@ -62,6 +64,10 @@ class AppRouter {
           return GameScreen(
             roomCode: extra['roomCode'] as String,
             playerUuid: extra['playerUuid'] as String,
+            nickname: extra['nickname'] as String,
+            isHost: extra['isHost'] as bool,
+            categoryId: extra['categoryId'] as int?,
+            categoryName: extra['categoryName'] as String?,
             players: List<Map<String, dynamic>>.from(
                 extra['players'] as List),
             initialQuestion:
@@ -76,6 +82,10 @@ class AppRouter {
           final extra = state.extra as Map<String, dynamic>;
           return SummaryScreen(
             scores: List<Map<String, dynamic>>.from(extra['scores'] as List),
+            nickname: extra['nickname'] as String?,
+            isHost: extra['isHost'] as bool? ?? false,
+            categoryId: extra['categoryId'] as int?,
+            categoryName: extra['categoryName'] as String?,
           );
         },
       ),

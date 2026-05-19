@@ -20,10 +20,23 @@ class QuestionModel {
   factory QuestionModel.fromJson(Map<String, dynamic> json) => QuestionModel(
         index: json['index'] as int,
         total: json['total'] as int,
-        text: json['text'] as String,
+        text: _decodeHtml(json['text'] as String),
         category: json['category'] as String,
         difficulty: json['difficulty'] as String,
         type: json['type'] as String,
-        answers: List<String>.from(json['answers'] as List),
+        answers: (json['answers'] as List)
+            .map((a) => _decodeHtml(a as String))
+            .toList(),
       );
+
+  static String _decodeHtml(String text) {
+    return text
+        .replaceAll('&amp;', '&')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#039;', "'")
+        .replaceAll('&apos;', "'")
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&nbsp;', ' ');
+  }
 }

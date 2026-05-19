@@ -57,6 +57,8 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
           'nickname': _nicknameController.text.trim(),
           'isHost': false,
           'playerUuid': result.playerUuid,
+          'categoryId': result.categoryId,
+          'categoryName': result.categoryName,
         });
       }
     } catch (e) {

@@ -11,6 +11,8 @@ class LobbyScreen extends StatefulWidget {
   final String nickname;
   final bool isHost;
   final String playerUuid;
+  final int? categoryId;
+  final String? categoryName;
 
   const LobbyScreen({
     super.key,
@@ -18,6 +20,8 @@ class LobbyScreen extends StatefulWidget {
     required this.nickname,
     required this.isHost,
     required this.playerUuid,
+    this.categoryId,
+    this.categoryName,
   });
 
   @override
@@ -30,10 +34,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
   String? _errorMessage;
   bool _isStarting = false;
   bool _didNavigateToGame = false;
+  String? _categoryName;
 
   @override
   void initState() {
     super.initState();
+    _categoryName = widget.categoryName;
     _setupCallbacks();
     _connect();
   }
@@ -44,9 +50,19 @@ class _LobbyScreenState extends State<LobbyScreen> {
       final members = (data['members'] as List<dynamic>)
           .map((m) => PlayerModel.fromJson(m as Map<String, dynamic>))
           .toList();
+      String? catName;
+      try {
+        final cat = data['category'];
+        if (cat is Map) {
+          catName = cat['name'] as String?;
+        } else {
+          catName = (data['categoryName'] ?? data['category_name']) as String?;
+        }
+      } catch (_) {}
       setState(() {
         _players = members;
         _isConnecting = false;
+        if (catName != null) _categoryName = catName;
       });
     };
 
@@ -71,6 +87,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
       context.go('/game', extra: {
         'roomCode': widget.roomCode,
         'playerUuid': widget.playerUuid,
+        'nickname': widget.nickname,
+        'isHost': widget.isHost,
+        'categoryId': widget.categoryId,
+        'categoryName': widget.categoryName,
         'players': _players.map((p) => {
               'uuid': p.uuid,
               'displayName': p.displayName,
@@ -149,11 +169,44 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Lobby'),
-        automaticallyImplyLeading: false,
-      ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final router = GoRouter.of(context);
+        if (widget.isHost) {
+          showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Zamknąć pokój?'),
+              content: const Text('Wszyscy gracze zostaną rozłączeni.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Nie'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Tak'),
+                ),
+              ],
+            ),
+          ).then((confirmed) {
+            if (confirmed == true && mounted) {
+              GameHubService.disconnect();
+              router.go('/home');
+            }
+          });
+        } else {
+          GameHubService.disconnect();
+          router.go('/home');
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Lobby'),
+          automaticallyImplyLeading: false,
+        ),
       body: SafeArea(
         child: _isConnecting
             ? const Center(
@@ -261,6 +314,28 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
+                    if (_categoryName != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.category_outlined,
+                              size: 14,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _categoryName!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.secondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -402,6 +477,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                   ],
                 ),
               ),
+      ),
       ),
     );
   }
