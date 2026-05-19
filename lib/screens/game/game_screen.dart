@@ -1,174 +1,204 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:triviagame_flutter/widgets/timer_widget.dart';
+import 'package:triviagame_flutter/core/services/game_hub_service.dart';
+import 'package:triviagame_flutter/models/question_model.dart';
 import 'package:triviagame_flutter/widgets/leaderboard_widget.dart';
+import 'package:triviagame_flutter/widgets/timer_widget.dart';
+
+enum _GamePhase { question, roundResult }
 
 class GameScreen extends StatefulWidget {
   final String roomCode;
-  final List<String> players;
+  final String playerUuid;
+  final List<Map<String, dynamic>> players;
+  final Map<String, dynamic> initialQuestion;
 
-  const GameScreen({super.key, required this.roomCode, required this.players});
+  const GameScreen({
+    super.key,
+    required this.roomCode,
+    required this.playerUuid,
+    required this.players,
+    required this.initialQuestion,
+  });
 
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
 
 class _GameScreenState extends State<GameScreen> {
-  // Mockowane pytania
-  final List<Map<String, dynamic>> _questions = [
-    {
-      'question': 'Jaka jest stolica Francji?',
-      'answers': ['Berlin', 'Madryt', 'Paryż', 'Rzym'],
-      'correct': 2,
-    },
-    {
-      'question': 'Ile wynosi 7 x 8?',
-      'answers': ['54', '56', '58', '62'],
-      'correct': 1,
-    },
-    {
-      'question': 'Kto napisał "Pana Tadeusza"?',
-      'answers': ['Słowacki', 'Mickiewicz', 'Norwid', 'Krasicki'],
-      'correct': 1,
-    },
-    {
-      'question': 'Który pierwiastek ma symbol Au?',
-      'answers': ['Srebro', 'Aluminium', 'Złoto', 'Miedź'],
-      'correct': 2,
-    },
-    {
-      'question': 'W którym roku wybuchła II wojna światowa?',
-      'answers': ['1937', '1938', '1939', '1940'],
-      'correct': 2,
-    },
-  ];
-
-  int _currentQuestion = 0;
+  late QuestionModel _currentQuestion;
   int _timeLeft = 30;
-  int? _selectedAnswer;
+  String? _selectedAnswer;
   bool _answered = false;
+  bool _waitingForOthers = false;
   Timer? _timer;
 
-  // Mockowane wyniki graczy
-  late List<Map<String, dynamic>> _scores;
+  _GamePhase _phase = _GamePhase.question;
+  String? _correctAnswer;
+  List<Map<String, dynamic>> _scores = [];
+  bool _showTimedOut = false;
+
+  bool _waitingForReady = false;
 
   @override
   void initState() {
     super.initState();
-    _scores = widget.players.map((p) => {'nickname': p, 'score': 0}).toList();
-    _startTimer();
+    _currentQuestion = QuestionModel.fromJson(widget.initialQuestion);
+    _scores = widget.players
+        .map((p) => {
+              'uuid': p['uuid'] as String,
+              'nickname': p['displayName'] as String,
+              'score': (p['points'] as int?) ?? 0,
+            })
+        .toList();
+    _setupCallbacks();
+    _startLocalTimer();
   }
 
-  void _startTimer() {
+  void _setupCallbacks() {
+    GameHubService.onAnswerAccepted = () {
+      if (!mounted) return;
+      setState(() {
+        _waitingForOthers = true;
+        _timer?.cancel();
+      });
+    };
+
+    GameHubService.onQuestionTimedOut = () {
+      if (!mounted) return;
+      setState(() {
+        _showTimedOut = true;
+        _timer?.cancel();
+      });
+    };
+
+    GameHubService.onRoundEnded = (data) {
+      if (!mounted) return;
+      final correctAnswer = data['correctAnswer'] as String;
+      final rawScores = data['scores'] as List<dynamic>;
+
+      setState(() {
+        _correctAnswer = correctAnswer;
+        _scores = rawScores
+            .map((s) => {
+                  'uuid': (s as Map<String, dynamic>)['uuid'] as String,
+                  'nickname': s['displayName'] as String,
+                  'score': s['points'] as int,
+                })
+            .toList();
+        _answered = false;
+        _waitingForOthers = false;
+        _showTimedOut = false;
+        _waitingForReady = false;
+        _phase = _GamePhase.roundResult;
+        _timer?.cancel();
+      });
+    };
+
+    GameHubService.onQuestionReceived = (data) {
+      if (!mounted) return;
+      setState(() => _currentQuestion = QuestionModel.fromJson(data));
+      _startLocalTimer();
+    };
+
+    GameHubService.onGameEnded = (data) {
+      if (!mounted) return;
+      final summaryScores = (data)
+          .map((p) => {
+                'nickname': (p as Map<String, dynamic>)['displayName'] as String,
+                'score': p['points'] as int,
+              })
+          .toList();
+      context.go('/summary', extra: {'scores': summaryScores});
+    };
+
+    GameHubService.onError = (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error)));
+    };
+  }
+
+  void _startLocalTimer() {
     _timer?.cancel();
     setState(() {
       _timeLeft = 30;
       _selectedAnswer = null;
       _answered = false;
+      _waitingForOthers = false;
+      _showTimedOut = false;
+      _waitingForReady = false;
+      _phase = _GamePhase.question;
     });
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_timeLeft == 0) {
         timer.cancel();
-        _nextQuestion();
       } else {
-        setState(() => _timeLeft--);
+        if (mounted) setState(() => _timeLeft--);
       }
     });
   }
 
-  void _selectAnswer(int index) {
-    if (_answered) return;
-
-    _timer?.cancel();
+  Future<void> _selectAnswer(String answer) async {
+    if (_answered || _waitingForOthers) return;
     setState(() {
-      _selectedAnswer = index;
+      _selectedAnswer = answer;
       _answered = true;
     });
-
-    // Dodaj punkty jeśli poprawna odpowiedź
-    if (index == _questions[_currentQuestion]['correct']) {
-      setState(() {
-        _scores[0]['score'] += _timeLeft * 10;
-      });
-    }
-
-    // Mockuj odpowiedzi innych graczy
-    for (int i = 1; i < _scores.length; i++) {
-      if (i % 2 == 0) _scores[i]['score'] += 150;
-    }
-
-    Future.delayed(const Duration(seconds: 2), () {
-  if (mounted) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            LeaderboardWidget(
-              scores: _scores,
-              currentNickname: widget.players[0],
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _nextQuestion();
-              },
-              child: const Text(
-                'Następne pytanie',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-});
-  }
-
-  void _nextQuestion() {
-    if (_currentQuestion < _questions.length - 1) {
-      setState(() => _currentQuestion++);
-      _startTimer();
-    } else {
-      // Koniec gry
-      _timer?.cancel();
-      context.go('/summary', extra: {'scores': _scores});
+    try {
+      await GameHubService.submitAnswer(
+          widget.roomCode, widget.playerUuid, answer);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nie udało się wysłać odpowiedzi.')),
+        );
+      }
     }
   }
 
-  Color _getAnswerColor(int index) {
+  Future<void> _onNextQuestion() async {
+    setState(() => _waitingForReady = true);
+    try {
+      await GameHubService.playerReady(widget.roomCode, widget.playerUuid);
+    } catch (e) {
+      if (mounted) setState(() => _waitingForReady = false);
+    }
+  }
+
+  Color _getAnswerColor(String answer) {
+    if (_phase != _GamePhase.question) return Theme.of(context).colorScheme.surface;
     if (!_answered) return Theme.of(context).colorScheme.surface;
-    final correct = _questions[_currentQuestion]['correct'];
-    if (index == correct) return Colors.green.shade700;
-    if (index == _selectedAnswer) return Colors.red.shade700;
+    if (answer == _selectedAnswer) {
+      return Colors.blue.shade700;
+    }
     return Theme.of(context).colorScheme.surface;
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    GameHubService.clearCallbacks();
+    GameHubService.disconnect();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final question = _questions[_currentQuestion];
+    if (_phase == _GamePhase.roundResult) {
+      return _buildRoundResult();
+    }
+    return _buildQuestion();
+  }
 
+  Widget _buildQuestion() {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('Pytanie ${_currentQuestion + 1}/${_questions.length}'),
+        title: Text(
+            'Pytanie ${_currentQuestion.index + 1}/${_currentQuestion.total}'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -189,13 +219,13 @@ class _GameScreenState extends State<GameScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             children: [
-              // Timer
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [TimerWidget(timeLeft: _timeLeft, totalTime: 30)],
+                children: [
+                  TimerWidget(timeLeft: _timeLeft, totalTime: 30),
+                ],
               ),
               const SizedBox(height: 24),
-              // Pytanie
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -203,30 +233,64 @@ class _GameScreenState extends State<GameScreen> {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Text(
-                  question['question'],
-                  style: Theme.of(context).textTheme.titleLarge,
-                  textAlign: TextAlign.center,
+                child: Column(
+                  children: [
+                    Text(
+                      _currentQuestion.category,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.secondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _currentQuestion.text,
+                      style: Theme.of(context).textTheme.titleLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
-              // Odpowiedzi
+              if (_showTimedOut)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Czas minął!',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+              if (_waitingForOthers)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Czekam na pozostałych graczy...',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.secondary,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
               Expanded(
                 child: GridView.count(
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  children: List.generate(
-                    4,
-                    (index) => GestureDetector(
-                      onTap: () => _selectAnswer(index),
+                  children: _currentQuestion.answers.map((answer) {
+                    final isSelected = _selectedAnswer == answer;
+                    return GestureDetector(
+                      onTap: () => _selectAnswer(answer),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         decoration: BoxDecoration(
-                          color: _getAnswerColor(index),
+                          color: _getAnswerColor(answer),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: _selectedAnswer == index && !_answered
+                            color: isSelected && !_answered
                                 ? Theme.of(context).colorScheme.primary
                                 : Colors.transparent,
                             width: 2,
@@ -236,7 +300,7 @@ class _GameScreenState extends State<GameScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(12),
                             child: Text(
-                              question['answers'][index],
+                              answer,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -247,10 +311,112 @@ class _GameScreenState extends State<GameScreen> {
                           ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  }).toList(),
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoundResult() {
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text(
+            'Pytanie ${_currentQuestion.index + 1}/${_currentQuestion.total}'),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade800,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Poprawna odpowiedź',
+                      style: TextStyle(
+                        color: Colors.green.shade200,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _correctAnswer ?? '',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (_selectedAnswer != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _selectedAnswer == _correctAnswer
+                            ? 'Dobra odpowiedź! +punkty'
+                            : 'Twoja odpowiedź: $_selectedAnswer',
+                        style: TextStyle(
+                          color: _selectedAnswer == _correctAnswer
+                              ? Colors.green.shade200
+                              : Colors.red.shade200,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: LeaderboardWidget(
+                  scores: _scores,
+                  currentNickname: widget.players.isNotEmpty
+                      ? widget.players.firstWhere(
+                          (p) => p['uuid'] == widget.playerUuid,
+                          orElse: () => {'displayName': ''},
+                        )['displayName'] as String
+                      : '',
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (_waitingForReady)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Czekam na pozostałych graczy...',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                    ),
+                  ],
+                )
+              else
+                ElevatedButton(
+                  onPressed: _onNextQuestion,
+                  child: const Text(
+                    'Następne pytanie',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              const SizedBox(height: 8),
             ],
           ),
         ),

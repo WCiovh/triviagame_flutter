@@ -39,9 +39,10 @@ class AppRouter {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
           return LobbyScreen(
-            roomCode: extra['roomCode'],
-            nickname: extra['nickname'],
-            isHost: extra['isHost'],
+            roomCode: extra['roomCode'] as String,
+            nickname: extra['nickname'] as String,
+            isHost: extra['isHost'] as bool,
+            playerUuid: extra['playerUuid'] as String,
           );
         },
       ),
@@ -50,7 +51,7 @@ class AppRouter {
         name: 'qrScanner',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
-          return QrScannerScreen(nickname: extra['nickname']);
+          return QrScannerScreen(nickname: extra['nickname'] as String);
         },
       ),
       GoRoute(
@@ -59,8 +60,12 @@ class AppRouter {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
           return GameScreen(
-            roomCode: extra['roomCode'],
-            players: List<String>.from(extra['players']),
+            roomCode: extra['roomCode'] as String,
+            playerUuid: extra['playerUuid'] as String,
+            players: List<Map<String, dynamic>>.from(
+                extra['players'] as List),
+            initialQuestion:
+                extra['initialQuestion'] as Map<String, dynamic>,
           );
         },
       ),
@@ -70,7 +75,7 @@ class AppRouter {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
           return SummaryScreen(
-            scores: List<Map<String, dynamic>>.from(extra['scores']),
+            scores: List<Map<String, dynamic>>.from(extra['scores'] as List),
           );
         },
       ),

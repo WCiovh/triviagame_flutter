@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:triviagame_flutter/widgets/loading_widget.dart';
 import 'package:triviagame_flutter/widgets/error_widget.dart';
 import 'package:triviagame_flutter/core/services/connectivity_service.dart';
+import 'package:triviagame_flutter/core/services/room_api_service.dart';
 import 'package:triviagame_flutter/widgets/offline_widget.dart';
 
 class JoinRoomScreen extends StatefulWidget {
@@ -21,12 +22,11 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
 
   void _joinRoom() async {
     if (_nicknameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Podaj swój nick!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Podaj swój nick!')),
+      );
       return;
     }
-
     if (_roomCodeController.text.trim().length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Kod pokoju musi mieć 6 znaków!')),
@@ -45,24 +45,25 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
+
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final roomCode = _roomCodeController.text.trim().toUpperCase();
+      final result = await RoomApiService.joinRoom(
+          roomCode, _nicknameController.text.trim());
+
       if (mounted) {
-        setState(() => _isLoading = false);
-        context.go(
-          '/lobby',
-          extra: {
-            'roomCode': _roomCodeController.text.trim().toUpperCase(),
-            'nickname': _nicknameController.text.trim(),
-            'isHost': false,
-          },
-        );
+        context.go('/lobby', extra: {
+          'roomCode': result.roomCode,
+          'nickname': _nicknameController.text.trim(),
+          'isHost': false,
+          'playerUuid': result.playerUuid,
+        });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Nie udało się dołączyć do pokoju. Spróbuj ponownie.';
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -128,21 +129,17 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
                     );
                     return;
                   }
-                  context.go(
-                    '/qr-scanner',
-                    extra: {'nickname': _nicknameController.text.trim()},
-                  );
+                  context.go('/qr-scanner',
+                      extra: {'nickname': _nicknameController.text.trim()});
                 },
                 icon: const Icon(Icons.qr_code_scanner),
                 label: const Text('Skanuj kod QR'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 52),
                   side: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                      color: Theme.of(context).colorScheme.primary),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                      borderRadius: BorderRadius.circular(16)),
                 ),
               ),
               if (_errorMessage != null)

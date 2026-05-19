@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:triviagame_flutter/widgets/loading_widget.dart';
 import 'package:triviagame_flutter/widgets/error_widget.dart';
 import 'package:triviagame_flutter/core/services/connectivity_service.dart';
+import 'package:triviagame_flutter/core/services/room_api_service.dart';
 import 'package:triviagame_flutter/widgets/offline_widget.dart';
 
 class CreateRoomScreen extends StatefulWidget {
@@ -18,20 +19,11 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   String? _errorMessage;
   bool _isOffline = false;
 
-  String _generateRoomCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = List.generate(
-      6,
-      (i) => chars[DateTime.now().millisecondsSinceEpoch % chars.length],
-    );
-    return random.join();
-  }
-
   void _createRoom() async {
     if (_nicknameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Podaj swój nick!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Podaj swój nick!')),
+      );
       return;
     }
 
@@ -46,26 +38,24 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
+
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      final roomCode = _generateRoomCode();
+      final result =
+          await RoomApiService.createRoom(_nicknameController.text.trim());
 
       if (mounted) {
-        setState(() => _isLoading = false);
-        context.go(
-          '/lobby',
-          extra: {
-            'roomCode': roomCode,
-            'nickname': _nicknameController.text.trim(),
-            'isHost': true,
-          },
-        );
+        context.go('/lobby', extra: {
+          'roomCode': result.roomCode,
+          'nickname': _nicknameController.text.trim(),
+          'isHost': true,
+          'playerUuid': result.playerUuid,
+        });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Nie udało się utworzyć pokoju. Spróbuj ponownie.';
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -112,7 +102,8 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                 ),
               ),
               if (_errorMessage != null)
-                AppErrorWidget(message: _errorMessage!, onRetry: _createRoom),
+                AppErrorWidget(
+                    message: _errorMessage!, onRetry: _createRoom),
               if (_isOffline) OfflineWidget(onRetry: _createRoom),
               const Spacer(),
               _isLoading
