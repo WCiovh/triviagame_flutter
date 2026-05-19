@@ -1,5 +1,4 @@
 import 'package:go_router/go_router.dart';
-import 'package:flutter/material.dart';
 import 'package:triviagame_flutter/screens/splash/splash_screen.dart';
 import 'package:triviagame_flutter/screens/home/home_screen.dart';
 import 'package:triviagame_flutter/screens/room/create_room_screen.dart';
@@ -39,9 +38,12 @@ class AppRouter {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
           return LobbyScreen(
-            roomCode: extra['roomCode'],
-            nickname: extra['nickname'],
-            isHost: extra['isHost'],
+            roomCode: extra['roomCode'] as String,
+            nickname: extra['nickname'] as String,
+            isHost: extra['isHost'] as bool,
+            playerUuid: extra['playerUuid'] as String,
+            categoryId: extra['categoryId'] as int?,
+            categoryName: extra['categoryName'] as String?,
           );
         },
       ),
@@ -50,7 +52,7 @@ class AppRouter {
         name: 'qrScanner',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
-          return QrScannerScreen(nickname: extra['nickname']);
+          return QrScannerScreen(nickname: extra['nickname'] as String);
         },
       ),
       GoRoute(
@@ -59,8 +61,16 @@ class AppRouter {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
           return GameScreen(
-            roomCode: extra['roomCode'],
-            players: List<String>.from(extra['players']),
+            roomCode: extra['roomCode'] as String,
+            playerUuid: extra['playerUuid'] as String,
+            nickname: extra['nickname'] as String,
+            isHost: extra['isHost'] as bool,
+            categoryId: extra['categoryId'] as int?,
+            categoryName: extra['categoryName'] as String?,
+            players: List<Map<String, dynamic>>.from(
+                extra['players'] as List),
+            initialQuestion:
+                extra['initialQuestion'] as Map<String, dynamic>,
           );
         },
       ),
@@ -70,7 +80,13 @@ class AppRouter {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
           return SummaryScreen(
-            scores: List<Map<String, dynamic>>.from(extra['scores']),
+            scores: List<Map<String, dynamic>>.from(extra['scores'] as List),
+            roomCode: extra['roomCode'] as String?,
+            playerUuid: extra['playerUuid'] as String?,
+            nickname: extra['nickname'] as String?,
+            isHost: extra['isHost'] as bool? ?? false,
+            categoryId: extra['categoryId'] as int?,
+            categoryName: extra['categoryName'] as String?,
           );
         },
       ),
