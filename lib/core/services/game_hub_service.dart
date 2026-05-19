@@ -58,10 +58,6 @@ class GameHubService {
         args: [roomCode, playerUuid, answer]);
   }
 
-  static Future<void> playerReady(String roomCode, String playerUuid) async {
-    await _connection!.invoke('PlayerReady', args: [roomCode, playerUuid]);
-  }
-
   static Future<void> disconnect() async {
     await _connection?.stop();
     _connection = null;

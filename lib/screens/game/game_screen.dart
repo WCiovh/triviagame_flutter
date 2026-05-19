@@ -39,7 +39,8 @@ class _GameScreenState extends State<GameScreen> {
   List<Map<String, dynamic>> _scores = [];
   bool _showTimedOut = false;
 
-  bool _waitingForReady = false;
+  bool _waitingForNextQuestion = false;
+  Map<String, dynamic>? _bufferedQuestion;
 
   @override
   void initState() {
@@ -90,7 +91,7 @@ class _GameScreenState extends State<GameScreen> {
         _answered = false;
         _waitingForOthers = false;
         _showTimedOut = false;
-        _waitingForReady = false;
+        _waitingForNextQuestion = false;
         _phase = _GamePhase.roundResult;
         _timer?.cancel();
       });
@@ -98,8 +99,11 @@ class _GameScreenState extends State<GameScreen> {
 
     GameHubService.onQuestionReceived = (data) {
       if (!mounted) return;
-      setState(() => _currentQuestion = QuestionModel.fromJson(data));
-      _startLocalTimer();
+      if (_waitingForNextQuestion) {
+        _applyNextQuestion(data);
+      } else {
+        setState(() => _bufferedQuestion = data);
+      }
     };
 
     GameHubService.onGameEnded = (data) {
@@ -120,6 +124,14 @@ class _GameScreenState extends State<GameScreen> {
     };
   }
 
+  void _applyNextQuestion(Map<String, dynamic> data) {
+    setState(() {
+      _currentQuestion = QuestionModel.fromJson(data);
+      _bufferedQuestion = null;
+    });
+    _startLocalTimer();
+  }
+
   void _startLocalTimer() {
     _timer?.cancel();
     setState(() {
@@ -128,7 +140,7 @@ class _GameScreenState extends State<GameScreen> {
       _answered = false;
       _waitingForOthers = false;
       _showTimedOut = false;
-      _waitingForReady = false;
+      _waitingForNextQuestion = false;
       _phase = _GamePhase.question;
     });
 
@@ -159,12 +171,11 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  Future<void> _onNextQuestion() async {
-    setState(() => _waitingForReady = true);
-    try {
-      await GameHubService.playerReady(widget.roomCode, widget.playerUuid);
-    } catch (e) {
-      if (mounted) setState(() => _waitingForReady = false);
+  void _onNextQuestion() {
+    if (_bufferedQuestion != null) {
+      _applyNextQuestion(_bufferedQuestion!);
+    } else {
+      setState(() => _waitingForNextQuestion = true);
     }
   }
 
@@ -390,7 +401,7 @@ class _GameScreenState extends State<GameScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              if (_waitingForReady)
+              if (_waitingForNextQuestion)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

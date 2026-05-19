@@ -7,7 +7,10 @@ class RoomApiService {
       String ownerName) async {
     final response = await http.post(
       Uri.parse('${AppConfig.baseUrl}/api/rooms'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        if (AppConfig.apiKey.isNotEmpty) 'X-Api-Key': AppConfig.apiKey,
+      },
       body: jsonEncode({
         'ownerName': ownerName,
         'amount': 10,
