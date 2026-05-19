@@ -14,11 +14,21 @@ class JoinRoomScreen extends StatefulWidget {
 }
 
 class _JoinRoomScreenState extends State<JoinRoomScreen> {
-  final _nicknameController = TextEditingController();
-  final _roomCodeController = TextEditingController();
+  static String _savedNickname = '';
+  static String _savedRoomCode = '';
+
+  late final TextEditingController _nicknameController;
+  late final TextEditingController _roomCodeController;
   bool _isLoading = false;
   String? _errorMessage;
   bool _isOffline = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nicknameController = TextEditingController(text: _savedNickname);
+    _roomCodeController = TextEditingController(text: _savedRoomCode);
+  }
 
   void _joinRoom() async {
     if (_nicknameController.text.trim().isEmpty) {
@@ -73,6 +83,8 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
 
   @override
   void dispose() {
+    _savedNickname = _nicknameController.text;
+    _savedRoomCode = _roomCodeController.text;
     _nicknameController.dispose();
     _roomCodeController.dispose();
     super.dispose();
@@ -89,66 +101,75 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Dołącz do gry',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Podaj nick i kod pokoju aby dołączyć.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _nicknameController,
-                maxLength: 16,
-                decoration: const InputDecoration(
-                  labelText: 'Nick',
-                  prefixIcon: Icon(Icons.person_outline),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Dołącz do gry',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Podaj nick i kod pokoju aby dołączyć.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 32),
+                    TextField(
+                      controller: _nicknameController,
+                      maxLength: 16,
+                      decoration: const InputDecoration(
+                        labelText: 'Nick',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _roomCodeController,
+                      maxLength: 6,
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: const InputDecoration(
+                        labelText: 'Kod pokoju',
+                        prefixIcon: Icon(Icons.meeting_room_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        if (_nicknameController.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Najpierw podaj nick!')),
+                          );
+                          return;
+                        }
+                        context.go('/qr-scanner',
+                            extra: {'nickname': _nicknameController.text.trim()});
+                      },
+                      icon: const Icon(Icons.qr_code_scanner),
+                      label: const Text('Skanuj kod QR'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 52),
+                        side: BorderSide(
+                            color: Theme.of(context).colorScheme.primary),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                      ),
+                    ),
+                    if (_errorMessage != null)
+                      AppErrorWidget(message: _errorMessage!, onRetry: _joinRoom),
+                    if (_isOffline) OfflineWidget(onRetry: _joinRoom),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _roomCodeController,
-                maxLength: 6,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: 'Kod pokoju',
-                  prefixIcon: Icon(Icons.meeting_room_outlined),
-                ),
-              ),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () {
-                  if (_nicknameController.text.trim().isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Najpierw podaj nick!')),
-                    );
-                    return;
-                  }
-                  context.go('/qr-scanner',
-                      extra: {'nickname': _nicknameController.text.trim()});
-                },
-                icon: const Icon(Icons.qr_code_scanner),
-                label: const Text('Skanuj kod QR'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 52),
-                  side: BorderSide(
-                      color: Theme.of(context).colorScheme.primary),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                ),
-              ),
-              if (_errorMessage != null)
-                AppErrorWidget(message: _errorMessage!, onRetry: _joinRoom),
-              if (_isOffline) OfflineWidget(onRetry: _joinRoom),
-              const Spacer(),
-              _isLoading
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+              child: _isLoading
                   ? const LoadingWidget(message: 'Dołączanie do pokoju...')
                   : ElevatedButton(
                       onPressed: _joinRoom,
@@ -157,8 +178,8 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

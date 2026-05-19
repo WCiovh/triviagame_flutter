@@ -102,7 +102,12 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/home');
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Utwórz pokój'),
         leading: IconButton(
@@ -110,69 +115,79 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
           onPressed: () => context.go('/home'),
         ),
       ),
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Jak masz na imię?',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Twój nick będzie widoczny dla innych graczy.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _nicknameController,
-                maxLength: 16,
-                buildCounter: (_, {required currentLength, required isFocused, required maxLength}) => null,
-                decoration: const InputDecoration(
-                  labelText: 'Nick',
-                  prefixIcon: Icon(Icons.person_outline),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Jak masz na imię?',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Twój nick będzie widoczny dla innych graczy.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 32),
+                    TextField(
+                      controller: _nicknameController,
+                      maxLength: 16,
+                      buildCounter: (_, {required currentLength, required isFocused, required maxLength}) => null,
+                      decoration: const InputDecoration(
+                        labelText: 'Nick',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _loadingCategories
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: LinearProgressIndicator(),
+                          )
+                        : DropdownButtonFormField<int?>(
+                            initialValue: _selectedCategoryId,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Kategoria',
+                              prefixIcon: Icon(Icons.category_outlined),
+                            ),
+                            items: [
+                              const DropdownMenuItem<int?>(
+                                value: null,
+                                child: Text('Dowolna kategoria'),
+                              ),
+                              ..._categories.map((cat) => DropdownMenuItem<int?>(
+                                    value: cat['id'] as int,
+                                    child: Text(cat['name'] as String),
+                                  )),
+                            ],
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedCategoryId = val;
+                                _selectedCategoryName = val == null
+                                    ? null
+                                    : _categories.firstWhere(
+                                        (c) => c['id'] == val)['name'] as String;
+                              });
+                            },
+                          ),
+                    if (_errorMessage != null)
+                      AppErrorWidget(message: _errorMessage!, onRetry: _createRoom),
+                    if (_isOffline) OfflineWidget(onRetry: _createRoom),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              _loadingCategories
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: LinearProgressIndicator(),
-                    )
-                  : DropdownButtonFormField<int?>(
-                      initialValue: _selectedCategoryId,
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Kategoria',
-                        prefixIcon: Icon(Icons.category_outlined),
-                      ),
-                      items: [
-                        const DropdownMenuItem<int?>(
-                          value: null,
-                          child: Text('Dowolna kategoria'),
-                        ),
-                        ..._categories.map((cat) => DropdownMenuItem<int?>(
-                              value: cat['id'] as int,
-                              child: Text(cat['name'] as String),
-                            )),
-                      ],
-                      onChanged: (val) {
-                        setState(() {
-                          _selectedCategoryId = val;
-                          _selectedCategoryName = val == null
-                              ? null
-                              : _categories.firstWhere(
-                                  (c) => c['id'] == val)['name'] as String;
-                        });
-                      },
-                    ),
-              if (_errorMessage != null)
-                AppErrorWidget(message: _errorMessage!, onRetry: _createRoom),
-              if (_isOffline) OfflineWidget(onRetry: _createRoom),
-              const Spacer(),
-              _isLoading
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+              child: _isLoading
                   ? const LoadingWidget(message: 'Tworzenie pokoju...')
                   : ElevatedButton(
                       onPressed: _createRoom,
@@ -181,9 +196,10 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
       ),
     );
   }

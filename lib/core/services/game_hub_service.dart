@@ -7,6 +7,7 @@ class GameHubService {
   static void Function(Map<String, dynamic>)? onConnectedToRoom;
   static void Function(Map<String, dynamic>)? onPlayerConnected;
   static void Function(String)? onPlayerDisconnected;
+  static void Function()? onRoomClosed;
   static void Function(Map<String, dynamic>)? onGameStarted;
   static void Function()? onAnswerAccepted;
   static void Function()? onQuestionTimedOut;
@@ -27,6 +28,7 @@ class GameHubService {
         (args) => onPlayerConnected?.call(args![0] as Map<String, dynamic>));
     _connection!.on('PlayerDisconnected',
         (args) => onPlayerDisconnected?.call(args![0] as String));
+    _connection!.on('RoomClosed', (_) => onRoomClosed?.call());
     _connection!.on('GameStarted',
         (args) => onGameStarted?.call(args![0] as Map<String, dynamic>));
     _connection!.on('AnswerAccepted', (_) => onAnswerAccepted?.call());
@@ -58,6 +60,10 @@ class GameHubService {
         args: [roomCode, playerUuid, answer]);
   }
 
+  static Future<void> playerReady(String roomCode, String playerUuid) async {
+    await _connection!.invoke('PlayerReady', args: [roomCode, playerUuid]);
+  }
+
   static Future<void> disconnect() async {
     await _connection?.stop();
     _connection = null;
@@ -67,6 +73,7 @@ class GameHubService {
     onConnectedToRoom = null;
     onPlayerConnected = null;
     onPlayerDisconnected = null;
+    onRoomClosed = null;
     onGameStarted = null;
     onAnswerAccepted = null;
     onQuestionTimedOut = null;

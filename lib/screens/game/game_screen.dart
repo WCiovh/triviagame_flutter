@@ -41,7 +41,6 @@ class _GameScreenState extends State<GameScreen> {
   bool _answered = false;
   bool _waitingForOthers = false;
   Timer? _timer;
-  Timer? _autoAdvanceTimer;
 
   _GamePhase _phase = _GamePhase.question;
   String? _correctAnswer;
@@ -49,7 +48,6 @@ class _GameScreenState extends State<GameScreen> {
   bool _showTimedOut = false;
 
   bool _waitingForNextQuestion = false;
-  Map<String, dynamic>? _bufferedQuestion;
 
   @override
   void initState() {
@@ -107,15 +105,7 @@ class _GameScreenState extends State<GameScreen> {
 
     GameHubService.onQuestionReceived = (data) {
       if (!mounted) return;
-      if (_waitingForNextQuestion) {
-        _applyNextQuestion(data);
-      } else {
-        setState(() => _bufferedQuestion = data);
-        _autoAdvanceTimer?.cancel();
-        _autoAdvanceTimer = Timer(const Duration(seconds: 10), () {
-          if (mounted) _onNextQuestion();
-        });
-      }
+      _applyNextQuestion(data);
     };
 
     GameHubService.onGameEnded = (data) {
@@ -143,10 +133,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _applyNextQuestion(Map<String, dynamic> data) {
-    setState(() {
-      _currentQuestion = QuestionModel.fromJson(data);
-      _bufferedQuestion = null;
-    });
+    setState(() => _currentQuestion = QuestionModel.fromJson(data));
     _startLocalTimer();
   }
 
@@ -189,13 +176,11 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  void _onNextQuestion() {
-    _autoAdvanceTimer?.cancel();
-    if (_bufferedQuestion != null) {
-      _applyNextQuestion(_bufferedQuestion!);
-    } else {
-      setState(() => _waitingForNextQuestion = true);
-    }
+  Future<void> _onNextQuestion() async {
+    setState(() => _waitingForNextQuestion = true);
+    try {
+      await GameHubService.playerReady(widget.roomCode, widget.playerUuid);
+    } catch (_) {}
   }
 
   Widget _buildResultBanner() {
@@ -277,7 +262,6 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void dispose() {
     _timer?.cancel();
-    _autoAdvanceTimer?.cancel();
     GameHubService.clearCallbacks();
     GameHubService.disconnect();
     super.dispose();

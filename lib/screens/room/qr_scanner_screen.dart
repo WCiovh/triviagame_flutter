@@ -14,10 +14,12 @@ class QrScannerScreen extends StatefulWidget {
 }
 
 class _QrScannerScreenState extends State<QrScannerScreen> {
-  final MobileScannerController _controller = MobileScannerController();
+  final MobileScannerController _controller =
+      MobileScannerController(autoStart: false);
   bool _scanned = false;
   bool _isJoining = false;
   String? _errorMessage;
+  bool _hasPermission = false;
 
   @override
   void initState() {
@@ -27,6 +29,11 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
   Future<void> _checkPermission() async {
     final granted = await PermissionService.requestCameraPermission();
+    if (granted && mounted) {
+      setState(() => _hasPermission = true);
+      _controller.start();
+      return;
+    }
     if (!granted && mounted) {
       showDialog(
         context: context,
@@ -119,7 +126,8 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       ),
       body: Stack(
         children: [
-          MobileScanner(controller: _controller, onDetect: _onDetect),
+          if (_hasPermission)
+            MobileScanner(controller: _controller, onDetect: _onDetect),
           Center(
             child: Container(
               width: 250,

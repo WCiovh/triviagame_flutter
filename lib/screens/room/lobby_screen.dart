@@ -81,6 +81,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
       setState(() => _players.removeWhere((p) => p.uuid == uuid));
     };
 
+    GameHubService.onRoomClosed = () {
+      if (!mounted) return;
+      GameHubService.clearCallbacks();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Host zamknął pokój.')),
+      );
+      GoRouter.of(context).go('/home');
+    };
+
     GameHubService.onGameStarted = (data) {
       if (!mounted) return;
       _didNavigateToGame = true;
@@ -366,7 +375,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     Expanded(
                       child: ListView.separated(
                         itemCount: _players.length,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (_, _) =>
                             const SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final player = _players[index];
