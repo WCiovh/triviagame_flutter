@@ -121,7 +121,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   Future<void> _connect() async {
     try {
-      await GameHubService.connect();
+      if (!GameHubService.isConnected) await GameHubService.connect();
       await GameHubService.connectToRoom(widget.roomCode, widget.playerUuid);
     } catch (e) {
       if (mounted) {

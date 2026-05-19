@@ -15,7 +15,9 @@ class CreateRoomScreen extends StatefulWidget {
 }
 
 class _CreateRoomScreenState extends State<CreateRoomScreen> {
-  final _nicknameController = TextEditingController();
+  static String _savedNickname = '';
+
+  late final TextEditingController _nicknameController;
   bool _isLoading = false;
   String? _errorMessage;
   bool _isOffline = false;
@@ -28,6 +30,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   @override
   void initState() {
     super.initState();
+    _nicknameController = TextEditingController(text: _savedNickname);
     _loadCategories();
   }
 
@@ -96,6 +99,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
 
   @override
   void dispose() {
+    _savedNickname = _nicknameController.text;
     _nicknameController.dispose();
     super.dispose();
   }
@@ -140,6 +144,10 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                       controller: _nicknameController,
                       maxLength: 16,
                       buildCounter: (_, {required currentLength, required isFocused, required maxLength}) => null,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                       decoration: const InputDecoration(
                         labelText: 'Nick',
                         prefixIcon: Icon(Icons.person_outline),

@@ -82,6 +82,8 @@ class AppRouter {
           final extra = state.extra as Map<String, dynamic>;
           return SummaryScreen(
             scores: List<Map<String, dynamic>>.from(extra['scores'] as List),
+            roomCode: extra['roomCode'] as String?,
+            playerUuid: extra['playerUuid'] as String?,
             nickname: extra['nickname'] as String?,
             isHost: extra['isHost'] as bool? ?? false,
             categoryId: extra['categoryId'] as int?,

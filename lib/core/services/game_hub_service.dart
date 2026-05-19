@@ -14,6 +14,7 @@ class GameHubService {
   static void Function(Map<String, dynamic>)? onRoundEnded;
   static void Function(Map<String, dynamic>)? onQuestionReceived;
   static void Function(List<dynamic>)? onGameEnded;
+  static void Function(Map<String, dynamic>)? onGameRestarted;
   static void Function(String)? onError;
 
   static Future<void> connect() async {
@@ -39,6 +40,8 @@ class GameHubService {
         (args) => onQuestionReceived?.call(args![0] as Map<String, dynamic>));
     _connection!.on('GameEnded',
         (args) => onGameEnded?.call(args![0] as List<dynamic>));
+    _connection!.on('GameRestarted',
+        (args) => onGameRestarted?.call(args![0] as Map<String, dynamic>));
     _connection!.on(
         'Error', (args) => onError?.call(args![0] as String));
 
@@ -64,6 +67,12 @@ class GameHubService {
     await _connection!.invoke('PlayerReady', args: [roomCode, playerUuid]);
   }
 
+  static Future<void> restartGame(String roomCode, String playerUuid, int? categoryId) async {
+    await _connection!.invoke('RestartGame', args: [roomCode, playerUuid, ?categoryId]);
+  }
+
+  static bool get isConnected => _connection != null;
+
   static Future<void> disconnect() async {
     await _connection?.stop();
     _connection = null;
@@ -80,6 +89,7 @@ class GameHubService {
     onRoundEnded = null;
     onQuestionReceived = null;
     onGameEnded = null;
+    onGameRestarted = null;
     onError = null;
   }
 }

@@ -15,7 +15,6 @@ class JoinRoomScreen extends StatefulWidget {
 
 class _JoinRoomScreenState extends State<JoinRoomScreen> {
   static String _savedNickname = '';
-  static String _savedRoomCode = '';
 
   late final TextEditingController _nicknameController;
   late final TextEditingController _roomCodeController;
@@ -27,7 +26,7 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
   void initState() {
     super.initState();
     _nicknameController = TextEditingController(text: _savedNickname);
-    _roomCodeController = TextEditingController(text: _savedRoomCode);
+    _roomCodeController = TextEditingController();
   }
 
   void _joinRoom() async {
@@ -84,7 +83,6 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
   @override
   void dispose() {
     _savedNickname = _nicknameController.text;
-    _savedRoomCode = _roomCodeController.text;
     _nicknameController.dispose();
     _roomCodeController.dispose();
     super.dispose();
@@ -92,7 +90,12 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/home');
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Dołącz do pokoju'),
         leading: IconButton(
@@ -123,6 +126,10 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
                     TextField(
                       controller: _nicknameController,
                       maxLength: 16,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                       decoration: const InputDecoration(
                         labelText: 'Nick',
                         prefixIcon: Icon(Icons.person_outline),
@@ -133,6 +140,10 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
                       controller: _roomCodeController,
                       maxLength: 6,
                       textCapitalization: TextCapitalization.characters,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                       decoration: const InputDecoration(
                         labelText: 'Kod pokoju',
                         prefixIcon: Icon(Icons.meeting_room_outlined),
@@ -181,6 +192,7 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

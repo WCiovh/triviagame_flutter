@@ -48,6 +48,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _showTimedOut = false;
 
   bool _waitingForNextQuestion = false;
+  bool _didNavigateToSummary = false;
 
   @override
   void initState() {
@@ -110,6 +111,7 @@ class _GameScreenState extends State<GameScreen> {
 
     GameHubService.onGameEnded = (data) {
       if (!mounted) return;
+      _didNavigateToSummary = true;
       final summaryScores = (data)
           .map((p) => {
                 'nickname': (p as Map<String, dynamic>)['displayName'] as String,
@@ -118,6 +120,8 @@ class _GameScreenState extends State<GameScreen> {
           .toList();
       context.go('/summary', extra: {
         'scores': summaryScores,
+        'roomCode': widget.roomCode,
+        'playerUuid': widget.playerUuid,
         'nickname': widget.nickname,
         'isHost': widget.isHost,
         'categoryId': widget.categoryId,
@@ -262,8 +266,10 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void dispose() {
     _timer?.cancel();
-    GameHubService.clearCallbacks();
-    GameHubService.disconnect();
+    if (!_didNavigateToSummary) {
+      GameHubService.clearCallbacks();
+      GameHubService.disconnect();
+    }
     super.dispose();
   }
 

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:triviagame_flutter/core/services/game_hub_service.dart';
 import 'package:triviagame_flutter/core/services/room_api_service.dart';
 
 class SummaryScreen extends StatefulWidget {
   final List<Map<String, dynamic>> scores;
+  final String? roomCode;
+  final String? playerUuid;
   final String? nickname;
   final bool isHost;
   final int? categoryId;
@@ -12,6 +15,8 @@ class SummaryScreen extends StatefulWidget {
   const SummaryScreen({
     super.key,
     required this.scores,
+    this.roomCode,
+    this.playerUuid,
     this.nickname,
     this.isHost = false,
     this.categoryId,
@@ -23,37 +28,89 @@ class SummaryScreen extends StatefulWidget {
 }
 
 class _SummaryScreenState extends State<SummaryScreen> {
-  bool _isCreatingRoom = false;
+  bool _isRestarting = false;
+  bool _navigatingToLobby = false;
   String? _errorMessage;
 
+  List<Map<String, dynamic>> _categories = [];
+  int? _selectedCategoryId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCategoryId = widget.categoryId;
+    if (widget.isHost) _loadCategories();
+    _setupCallbacks();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final cats = await RoomApiService.getCategories();
+      if (mounted) setState(() => _categories = cats);
+    } catch (_) {}
+  }
+
+  void _setupCallbacks() {
+    GameHubService.onGameRestarted = (data) {
+      if (!mounted) return;
+      _navigatingToLobby = true;
+      final members = (data['members'] as List<dynamic>)
+          .map((m) => m as Map<String, dynamic>)
+          .toList();
+      String? catName;
+      try {
+        final cat = data['category'];
+        catName = cat is Map
+            ? cat['name'] as String?
+            : (data['categoryName'] ?? data['category_name']) as String?;
+      } catch (_) {}
+      context.go('/lobby', extra: {
+        'roomCode': data['joinCode'] as String,
+        'nickname': widget.nickname,
+        'isHost': widget.isHost,
+        'playerUuid': widget.playerUuid,
+        'categoryId': null,
+        'categoryName': catName,
+        'members': members,
+      });
+    };
+  }
+
   Future<void> _playAgain() async {
+    if (widget.roomCode == null || widget.playerUuid == null) return;
     setState(() {
-      _isCreatingRoom = true;
+      _isRestarting = true;
       _errorMessage = null;
     });
     try {
-      final result = await RoomApiService.createRoom(
-        widget.nickname!,
-        categoryId: widget.categoryId,
+      await GameHubService.restartGame(
+        widget.roomCode!,
+        widget.playerUuid!,
+        _selectedCategoryId,
       );
-      if (mounted) {
-        context.go('/lobby', extra: {
-          'roomCode': result.roomCode,
-          'nickname': widget.nickname,
-          'isHost': true,
-          'playerUuid': result.playerUuid,
-          'categoryId': widget.categoryId,
-          'categoryName': widget.categoryName,
-        });
-      }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isCreatingRoom = false;
+          _isRestarting = false;
           _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
+  }
+
+  void _leaveGame() {
+    GameHubService.clearCallbacks();
+    GameHubService.disconnect();
+    context.go('/home');
+  }
+
+  @override
+  void dispose() {
+    if (!_navigatingToLobby) {
+      GameHubService.clearCallbacks();
+      GameHubService.disconnect();
+    }
+    super.dispose();
   }
 
   @override
@@ -171,15 +228,39 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     ),
                   ),
                 ElevatedButton(
-                  onPressed: () => context.go('/home'),
+                  onPressed: _leaveGame,
                   child: const Text(
                     'Powrót do menu',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
-                if (widget.isHost && widget.nickname != null) ...[
+                if (widget.isHost && widget.roomCode != null) ...[
                   const SizedBox(height: 8),
-                  _isCreatingRoom
+                  if (_categories.isNotEmpty)
+                    DropdownButtonFormField<int?>(
+                      initialValue: _selectedCategoryId,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Kategoria na następną grę',
+                        prefixIcon: Icon(Icons.category_outlined),
+                        isDense: true,
+                      ),
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text('Dowolna kategoria'),
+                        ),
+                        ..._categories.map((cat) => DropdownMenuItem<int?>(
+                              value: cat['id'] as int,
+                              child: Text(cat['name'] as String),
+                            )),
+                      ],
+                      onChanged: _isRestarting
+                          ? null
+                          : (val) => setState(() => _selectedCategoryId = val),
+                    ),
+                  const SizedBox(height: 8),
+                  _isRestarting
                       ? const CircularProgressIndicator()
                       : OutlinedButton(
                           onPressed: _playAgain,
@@ -192,16 +273,31 @@ class _SummaryScreenState extends State<SummaryScreen> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          child: Text(
-                            widget.categoryName != null
-                                ? 'Zagraj ponownie (${widget.categoryName})'
-                                : 'Zagraj ponownie',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          child: const Text(
+                            'Zagraj ponownie',
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
+                ] else if (!widget.isHost) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Oczekuję na hosta...',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.secondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ],
             ),
