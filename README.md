@@ -51,7 +51,22 @@ lib/
 git clone https://github.com/WCiovh/triviagame_flutter
 cd triviagame_flutter
 flutter pub get
-flutter run
+```
+
+### Konfiguracja zmiennych środowiskowych
+
+Skopiuj plik przykładowy i uzupełnij klucz API backendu:
+
+```bash
+cp .env.json.example .env.json
+```
+
+Domyślna wartość (`change-me-in-production`) pasuje do lokalnego serwera uruchamianego bez nadpisania `Auth:ApiKey`.
+
+### Uruchomienie
+
+```bash
+flutter run --dart-define-from-file=.env.json
 ```
 
 ## 📋 Uprawnienia
