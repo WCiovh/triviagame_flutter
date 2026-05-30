@@ -66,7 +66,10 @@ class RoomApiService {
       String joinCode, String displayName) async {
     final response = await http.post(
       Uri.parse('${AppConfig.baseUrl}/api/rooms/join'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        if (AppConfig.apiKey.isNotEmpty) 'X-Api-Key': AppConfig.apiKey,
+      },
       body: jsonEncode({'joinCode': joinCode, 'displayName': displayName}),
     );
 
