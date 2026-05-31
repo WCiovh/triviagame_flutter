@@ -1,30 +1,40 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:triviagame_flutter/main.dart';
+import 'package:triviagame_flutter/core/theme/app_theme.dart';
+import 'package:triviagame_flutter/screens/splash/splash_screen.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('SplashScreen wyświetla nazwę aplikacji i podtytuł', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/splash',
+      routes: [
+        GoRoute(
+          path: '/splash',
+          builder: (context, state) => const SplashScreen(),
+        ),
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => const Scaffold(body: Text('Home')),
+        ),
+      ],
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(
+      MaterialApp.router(
+        routerConfig: router,
+        theme: AppTheme.darkTheme,
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('TriviaGame'), findsOneWidget);
+    expect(find.text('Real-time multiplayer quiz'), findsOneWidget);
+    expect(find.byIcon(Icons.quiz_rounded), findsOneWidget);
+
+    // przewiń czas testowy żeby timer ze splash screena mógł się zakończyć
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
   });
 }
