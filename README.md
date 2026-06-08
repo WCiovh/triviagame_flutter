@@ -17,19 +17,22 @@ Mobilna aplikacja quizowa **real-time multiplayer** zbudowana we Flutterze. Grac
 - Nick gracza zapamiętywany w sesji aplikacji
 - Obsługa stanów: **ładowanie**, **błąd serwera**, **brak połączenia**
 - Dialog potwierdzający wyjście z aplikacji
+- **Codzienne powiadomienie push o 18:00** zachęcające do rozgrywki
 
 ## Technologie
 
-| Pakiet | Wersja | Zastosowanie |
-|---|---|---|
-| `go_router` | 17.2.2 | nawigacja deklaratywna |
-| `signalr_netcore` | 1.3.5 | połączenie real-time z backendem |
-| `http` | 1.2.0 | REST API (tworzenie/dołączanie do pokoju) |
-| `qr_flutter` | 4.1.0 | generowanie kodu QR |
-| `mobile_scanner` | 7.2.0 | skanowanie kodu QR kamerą |
-| `share_plus` | 13.1.0 | udostępnianie kodu pokoju |
-| `permission_handler` | 12.0.1 | uprawnienie do kamery |
-| `connectivity_plus` | 7.1.1 | wykrywanie braku sieci |
+| Pakiet                        | Wersja | Zastosowanie                               |
+| ----------------------------- | ------ | ------------------------------------------ |
+| `go_router`                   | 17.2.2 | nawigacja deklaratywna                     |
+| `signalr_netcore`             | 1.3.5  | połączenie real-time z backendem           |
+| `http`                        | 1.2.0  | REST API (tworzenie/dołączanie do pokoju)  |
+| `qr_flutter`                  | 4.1.0  | generowanie kodu QR                        |
+| `mobile_scanner`              | 7.2.0  | skanowanie kodu QR kamerą                  |
+| `share_plus`                  | 13.1.0 | udostępnianie kodu pokoju                  |
+| `permission_handler`          | 12.0.1 | uprawnienie do kamery                      |
+| `connectivity_plus`           | 7.1.1  | wykrywanie braku sieci                     |
+| `flutter_local_notifications` | 18.0.1 | lokalne powiadomienia push                 |
+| `timezone`                    | 0.9.4  | obsługa stref czasowych przy schedulowaniu |
 
 ## Struktura projektu
 
@@ -42,6 +45,7 @@ lib/
 │   │   ├── game_hub_service.dart    # zarządzanie połączeniem SignalR i callbackami
 │   │   ├── room_api_service.dart    # HTTP: tworzenie/dołączanie do pokoju, kategorie
 │   │   ├── connectivity_service.dart
+│   │   ├── notification_service.dart # lokalne powiadomienia push (scheduler)
 │   │   └── permission_service.dart
 │   ├── theme/
 │   │   └── app_theme.dart
@@ -105,6 +109,8 @@ flutter run --dart-define-from-file=.env.json
 ## Uprawnienia
 
 - **CAMERA** — skanowanie kodów QR
+- **POST_NOTIFICATIONS** — lokalne powiadomienia push (Android 13+, starsze wersje nie wymagają zgody)
+- **RECEIVE_BOOT_COMPLETED** — przywrócenie zaplanowanych powiadomień po restarcie urządzenia
 
 ## Architektura SignalR
 
@@ -112,4 +118,4 @@ flutter run --dart-define-from-file=.env.json
 
 ## Autor
 
-- **WCiovh** — frontend
+- **WCiovh**
