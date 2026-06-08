@@ -1,6 +1,3 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
-
 class AppConfig {
   static const String apiKey = String.fromEnvironment('API_KEY', defaultValue: '');
   static String get baseUrl {
