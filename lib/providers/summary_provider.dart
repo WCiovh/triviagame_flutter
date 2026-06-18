@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/services/game_hub_service.dart';
-import '../core/services/room_api_service.dart';
+import '../core/errors/app_failure.dart';
+import '../domain/repositories/game_hub_repository.dart';
+import '../domain/repositories/room_repository.dart';
+import 'repository_providers.dart';
 
 class SummaryState {
   final bool isRestarting;
@@ -39,15 +41,19 @@ class SummaryState {
 }
 
 class SummaryNotifier extends AutoDisposeNotifier<SummaryState> {
+  late RoomRepository _roomRepo;
+  late GameHubRepository _hub;
   String? _roomCode;
   String? _playerUuid;
 
   @override
   SummaryState build() {
+    _roomRepo = ref.read(roomRepositoryProvider);
+    _hub = ref.read(gameHubRepositoryProvider);
     ref.onDispose(() {
       if (state.restartedData == null) {
-        GameHubService.clearCallbacks();
-        GameHubService.disconnect();
+        _hub.clearCallbacks();
+        _hub.disconnect();
       }
     });
     return const SummaryState();
@@ -64,13 +70,13 @@ class SummaryNotifier extends AutoDisposeNotifier<SummaryState> {
 
   Future<void> _loadCategories() async {
     try {
-      final cats = await RoomApiService.getCategories();
+      final cats = await _roomRepo.getCategories();
       state = state.copyWith(categories: cats);
     } catch (_) {}
   }
 
   void _setupCallbacks() {
-    GameHubService.onGameRestarted = (data) {
+    _hub.onGameRestarted = (data) {
       state = state.copyWith(restartedData: data);
     };
   }
@@ -87,8 +93,9 @@ class SummaryNotifier extends AutoDisposeNotifier<SummaryState> {
     if (_roomCode == null || _playerUuid == null) return;
     state = state.copyWith(isRestarting: true, clearError: true);
     try {
-      await GameHubService.restartGame(
-          _roomCode!, _playerUuid!, state.selectedCategoryId);
+      await _hub.restartGame(_roomCode!, _playerUuid!, state.selectedCategoryId);
+    } on AppFailure catch (f) {
+      state = state.copyWith(isRestarting: false, errorMessage: f.message);
     } catch (e) {
       state = state.copyWith(
         isRestarting: false,

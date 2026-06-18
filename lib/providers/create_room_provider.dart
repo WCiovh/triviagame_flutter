@@ -1,7 +1,8 @@
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/services/connectivity_service.dart';
-import '../core/services/room_api_service.dart';
+import '../core/errors/app_failure.dart';
+import '../domain/repositories/room_repository.dart';
+import 'repository_providers.dart';
 
 class CreateRoomState {
   final bool isLoading;
@@ -63,15 +64,18 @@ class CreateRoomResult {
 }
 
 class CreateRoomNotifier extends AutoDisposeNotifier<CreateRoomState> {
+  late RoomRepository _repo;
+
   @override
   CreateRoomState build() {
+    _repo = ref.read(roomRepositoryProvider);
     _loadCategories();
     return const CreateRoomState();
   }
 
   Future<void> _loadCategories() async {
     try {
-      final cats = await RoomApiService.getCategories();
+      final cats = await _repo.getCategories();
       state = state.copyWith(categories: cats, loadingCategories: false);
     } catch (_) {
       state = state.copyWith(loadingCategories: false);
@@ -89,12 +93,6 @@ class CreateRoomNotifier extends AutoDisposeNotifier<CreateRoomState> {
   }
 
   Future<CreateRoomResult?> createRoom(String nickname) async {
-    final online = await ConnectivityService.isOnline();
-    if (!online) {
-      state = state.copyWith(isOffline: true);
-      return null;
-    }
-
     state = state.copyWith(isLoading: true, clearError: true, isOffline: false);
 
     try {
@@ -107,8 +105,7 @@ class CreateRoomNotifier extends AutoDisposeNotifier<CreateRoomState> {
         categoryName = random['name'] as String;
       }
 
-      final result =
-          await RoomApiService.createRoom(nickname, categoryId: categoryId);
+      final result = await _repo.createRoom(nickname, categoryId: categoryId);
       state = state.copyWith(isLoading: false);
       return CreateRoomResult(
         roomCode: result.roomCode,
@@ -116,11 +113,11 @@ class CreateRoomNotifier extends AutoDisposeNotifier<CreateRoomState> {
         categoryId: categoryId,
         categoryName: categoryName,
       );
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString().replaceFirst('Exception: ', ''),
-      );
+    } on NetworkFailure {
+      state = state.copyWith(isLoading: false, isOffline: true);
+      return null;
+    } on AppFailure catch (f) {
+      state = state.copyWith(isLoading: false, errorMessage: f.message);
       return null;
     }
   }

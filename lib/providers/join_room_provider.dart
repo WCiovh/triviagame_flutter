@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/services/connectivity_service.dart';
-import '../core/services/room_api_service.dart';
+import '../core/errors/app_failure.dart';
+import '../domain/repositories/room_repository.dart';
+import 'repository_providers.dart';
 
 class JoinRoomState {
   final bool isLoading;
@@ -42,20 +43,19 @@ class JoinRoomResult {
 }
 
 class JoinRoomNotifier extends AutoDisposeNotifier<JoinRoomState> {
+  late RoomRepository _repo;
+
   @override
-  JoinRoomState build() => const JoinRoomState();
+  JoinRoomState build() {
+    _repo = ref.read(roomRepositoryProvider);
+    return const JoinRoomState();
+  }
 
   Future<JoinRoomResult?> joinRoom(String nickname, String roomCode) async {
-    final online = await ConnectivityService.isOnline();
-    if (!online) {
-      state = state.copyWith(isOffline: true);
-      return null;
-    }
-
     state = state.copyWith(isLoading: true, clearError: true, isOffline: false);
 
     try {
-      final result = await RoomApiService.joinRoom(
+      final result = await _repo.joinRoom(
           roomCode.trim().toUpperCase(), nickname.trim());
       state = state.copyWith(isLoading: false);
       return JoinRoomResult(
@@ -64,11 +64,11 @@ class JoinRoomNotifier extends AutoDisposeNotifier<JoinRoomState> {
         categoryId: result.categoryId,
         categoryName: result.categoryName,
       );
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString().replaceFirst('Exception: ', ''),
-      );
+    } on NetworkFailure {
+      state = state.copyWith(isLoading: false, isOffline: true);
+      return null;
+    } on AppFailure catch (f) {
+      state = state.copyWith(isLoading: false, errorMessage: f.message);
       return null;
     }
   }
