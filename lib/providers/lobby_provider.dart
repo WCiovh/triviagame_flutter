@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/services/game_hub_service.dart';
+import '../domain/repositories/game_hub_repository.dart';
 import '../models/player_model.dart';
+import 'repository_providers.dart';
 
 class LobbyState {
   final List<PlayerModel> players;
@@ -44,15 +45,17 @@ class LobbyState {
 }
 
 class LobbyNotifier extends AutoDisposeNotifier<LobbyState> {
+  late GameHubRepository _hub;
   String _roomCode = '';
   String _playerUuid = '';
 
   @override
   LobbyState build() {
+    _hub = ref.read(gameHubRepositoryProvider);
     ref.onDispose(() {
       if (state.gameStartData == null && !state.roomClosed) {
-        GameHubService.clearCallbacks();
-        GameHubService.disconnect();
+        _hub.clearCallbacks();
+        _hub.disconnect();
       }
     });
     return const LobbyState();
@@ -70,7 +73,7 @@ class LobbyNotifier extends AutoDisposeNotifier<LobbyState> {
   }
 
   void _setupCallbacks() {
-    GameHubService.onConnectedToRoom = (data) {
+    _hub.onConnectedToRoom = (data) {
       final members = (data['members'] as List<dynamic>)
           .map((m) => PlayerModel.fromJson(m as Map<String, dynamic>))
           .toList();
@@ -88,37 +91,37 @@ class LobbyNotifier extends AutoDisposeNotifier<LobbyState> {
       );
     };
 
-    GameHubService.onPlayerConnected = (data) {
+    _hub.onPlayerConnected = (data) {
       final player = PlayerModel.fromJson(data);
       if (!state.players.any((p) => p.uuid == player.uuid)) {
         state = state.copyWith(players: [...state.players, player]);
       }
     };
 
-    GameHubService.onPlayerDisconnected = (uuid) {
+    _hub.onPlayerDisconnected = (uuid) {
       state = state.copyWith(
         players: state.players.where((p) => p.uuid != uuid).toList(),
       );
     };
 
-    GameHubService.onRoomClosed = () {
-      GameHubService.clearCallbacks();
+    _hub.onRoomClosed = () {
+      _hub.clearCallbacks();
       state = state.copyWith(roomClosed: true);
     };
 
-    GameHubService.onGameStarted = (data) {
+    _hub.onGameStarted = (data) {
       state = state.copyWith(gameStartData: data);
     };
 
-    GameHubService.onError = (error) {
+    _hub.onError = (error) {
       state = state.copyWith(isStarting: false, errorMessage: error);
     };
   }
 
   Future<void> _connect() async {
     try {
-      if (!GameHubService.isConnected) await GameHubService.connect();
-      await GameHubService.connectToRoom(_roomCode, _playerUuid);
+      if (!_hub.isConnected) await _hub.connect();
+      await _hub.connectToRoom(_roomCode, _playerUuid);
     } catch (_) {
       state = state.copyWith(
         isConnecting: false,
@@ -130,7 +133,7 @@ class LobbyNotifier extends AutoDisposeNotifier<LobbyState> {
   Future<void> startGame() async {
     state = state.copyWith(isStarting: true, clearError: true);
     try {
-      await GameHubService.startGame(_roomCode, _playerUuid);
+      await _hub.startGame(_roomCode, _playerUuid);
     } catch (_) {
       state = state.copyWith(
           isStarting: false, errorMessage: 'Nie udało się rozpocząć gry.');
@@ -138,7 +141,7 @@ class LobbyNotifier extends AutoDisposeNotifier<LobbyState> {
   }
 
   void disconnect() {
-    GameHubService.disconnect();
+    _hub.disconnect();
   }
 }
 

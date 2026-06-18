@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/services/game_hub_service.dart';
+import '../domain/repositories/game_hub_repository.dart';
 import '../models/question_model.dart';
+import 'repository_providers.dart';
 
 enum GamePhase { question, roundResult }
 
@@ -69,17 +70,19 @@ class GameState {
 }
 
 class GameNotifier extends AutoDisposeNotifier<GameState> {
+  late GameHubRepository _hub;
   Timer? _timer;
   String _roomCode = '';
   String _playerUuid = '';
 
   @override
   GameState build() {
+    _hub = ref.read(gameHubRepositoryProvider);
     ref.onDispose(() {
       _timer?.cancel();
       if (state.gameEndedScores == null) {
-        GameHubService.clearCallbacks();
-        GameHubService.disconnect();
+        _hub.clearCallbacks();
+        _hub.disconnect();
       }
     });
     return const GameState();
@@ -109,16 +112,16 @@ class GameNotifier extends AutoDisposeNotifier<GameState> {
   }
 
   void _setupCallbacks() {
-    GameHubService.onAnswerAccepted = () {
+    _hub.onAnswerAccepted = () {
       state = state.copyWith(waitingForOthers: true);
     };
 
-    GameHubService.onQuestionTimedOut = () {
+    _hub.onQuestionTimedOut = () {
       _timer?.cancel();
       state = state.copyWith(showTimedOut: true);
     };
 
-    GameHubService.onRoundEnded = (data) {
+    _hub.onRoundEnded = (data) {
       _timer?.cancel();
       final correctAnswer = data['correctAnswer'] as String;
       final rawScores = data['scores'] as List<dynamic>;
@@ -141,16 +144,16 @@ class GameNotifier extends AutoDisposeNotifier<GameState> {
       );
     };
 
-    GameHubService.onQuestionReceived = (data) {
+    _hub.onQuestionReceived = (data) {
       state = state.copyWith(currentQuestion: QuestionModel.fromJson(data));
       _startLocalTimer();
     };
 
-    GameHubService.onGameEnded = (data) {
+    _hub.onGameEnded = (data) {
       state = state.copyWith(gameEndedScores: data);
     };
 
-    GameHubService.onError = (error) {
+    _hub.onError = (error) {
       state = state.copyWith(hubError: error);
     };
   }
@@ -180,7 +183,7 @@ class GameNotifier extends AutoDisposeNotifier<GameState> {
     if (state.answered || state.waitingForOthers) return;
     state = state.copyWith(selectedAnswer: answer, answered: true);
     try {
-      await GameHubService.submitAnswer(_roomCode, _playerUuid, answer);
+      await _hub.submitAnswer(_roomCode, _playerUuid, answer);
     } catch (_) {
       state = state.copyWith(hubError: 'Nie udało się wysłać odpowiedzi.');
     }
@@ -189,12 +192,12 @@ class GameNotifier extends AutoDisposeNotifier<GameState> {
   Future<void> onNextQuestion() async {
     state = state.copyWith(waitingForNextQuestion: true);
     try {
-      await GameHubService.playerReady(_roomCode, _playerUuid);
+      await _hub.playerReady(_roomCode, _playerUuid);
     } catch (_) {}
   }
 
   void disconnect() {
-    GameHubService.disconnect();
+    _hub.disconnect();
   }
 }
 
