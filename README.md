@@ -6,6 +6,7 @@ Mobilna aplikacja quizowa **real-time multiplayer** zbudowana we Flutterze. Grac
 
 - Tworzenie pokoju z wyborem kategorii pytań
 - Dołączanie przez **unikalny 6-znakowy kod**, **skan kodu QR** lub **udostępnienie linku**
+- **Fallback ręcznego wpisania kodu** gdy kamera jest niedostępna lub brak uprawnień
 - Wyświetlanie kodu QR pokoju w lobby
 - Widoczna kategoria gry dla wszystkich graczy w lobby
 - Rozgrywka z pytaniami jednokrotnego wyboru i **lokalnym odliczaniem czasu (30s)**
@@ -41,37 +42,50 @@ Mobilna aplikacja quizowa **real-time multiplayer** zbudowana we Flutterze. Grac
 lib/
 ├── core/
 │   ├── config/
-│   │   └── app_config.dart          # URL backendu (SignalR hub + REST)
+│   │   └── app_config.dart              # URL backendu (SignalR hub + REST)
+│   ├── errors/
+│   │   └── app_failure.dart             # sealed class błędów (Network/Server/NotFound/Unknown)
 │   ├── services/
-│   │   ├── game_hub_service.dart    # zarządzanie połączeniem SignalR i callbackami
-│   │   ├── room_api_service.dart    # HTTP: tworzenie/dołączanie do pokoju, kategorie
+│   │   ├── game_hub_service.dart        # połączenie SignalR i callbacki (warstwa niskopoziomowa)
+│   │   ├── room_api_service.dart        # HTTP: tworzenie/dołączanie do pokoju, kategorie
 │   │   ├── connectivity_service.dart
-│   │   ├── notification_service.dart # lokalne powiadomienia push (scheduler)
+│   │   ├── notification_service.dart    # lokalne powiadomienia push (scheduler)
 │   │   └── permission_service.dart
 │   ├── theme/
 │   │   └── app_theme.dart
-│   └── app_router.dart              # definicja tras (GoRouter)
+│   └── app_router.dart                  # definicja tras (GoRouter)
+├── data/
+│   ├── datasources/
+│   │   └── room_remote_datasource.dart  # HTTP + mapowanie wyjątków na AppFailure
+│   └── repositories/
+│       ├── room_repository_impl.dart    # sprawdzenie połączenia + delegacja do datasource
+│       └── game_hub_repository_impl.dart # delegacja do GameHubService
+├── domain/
+│   └── repositories/
+│       ├── room_repository.dart         # abstrakcja HTTP (interfejs)
+│       └── game_hub_repository.dart     # abstrakcja SignalR (interfejs)
 ├── models/
 │   ├── player_model.dart
 │   └── question_model.dart
-├── providers/                       # warstwa stanu (Riverpod)
-│   ├── create_room_provider.dart    # logika tworzenia pokoju
-│   ├── join_room_provider.dart      # logika dołączania do pokoju
-│   ├── lobby_provider.dart          # stan lobby, callbacki SignalR
-│   ├── game_provider.dart           # stan gry, timer, callbacki SignalR
-│   └── summary_provider.dart        # stan podsumowania, restart gry
+├── providers/                           # warstwa stanu (Riverpod)
+│   ├── repository_providers.dart        # singletony repozytoriów
+│   ├── create_room_provider.dart        # logika tworzenia pokoju
+│   ├── join_room_provider.dart          # logika dołączania do pokoju
+│   ├── lobby_provider.dart              # stan lobby, callbacki SignalR
+│   ├── game_provider.dart               # stan gry, timer, callbacki SignalR
+│   └── summary_provider.dart            # stan podsumowania, restart gry
 ├── screens/
-│   ├── splash/                      # ekran startowy
-│   ├── home/                        # menu główne
+│   ├── splash/                          # ekran startowy
+│   ├── home/                            # menu główne
 │   ├── room/
-│   │   ├── create_room_screen.dart  # tworzenie pokoju + wybór kategorii
-│   │   ├── join_room_screen.dart    # dołączanie kodem lub QR
-│   │   ├── lobby_screen.dart        # poczekalnia przed grą
-│   │   └── qr_scanner_screen.dart  # skaner QR
+│   │   ├── create_room_screen.dart      # tworzenie pokoju + wybór kategorii
+│   │   ├── join_room_screen.dart        # dołączanie kodem lub QR
+│   │   ├── lobby_screen.dart            # poczekalnia przed grą
+│   │   └── qr_scanner_screen.dart       # skaner QR + fallback ręcznego kodu
 │   ├── game/
-│   │   └── game_screen.dart         # rozgrywka (pytania, timer, ranking rundy)
+│   │   └── game_screen.dart             # rozgrywka (pytania, timer, ranking rundy)
 │   └── summary/
-│       └── summary_screen.dart      # podium, wyniki, restart
+│       └── summary_screen.dart          # podium, wyniki, restart
 └── widgets/
     ├── timer_widget.dart
     ├── leaderboard_widget.dart
@@ -79,6 +93,18 @@ lib/
     ├── loading_widget.dart
     ├── offline_widget.dart
     └── qr_widget.dart
+
+test/
+├── mocks/
+│   ├── mock_room_repository.dart        # konfigurowalny mock HTTP
+│   └── mock_game_hub_repository.dart    # mock no-op SignalR
+├── models/
+│   ├── player_model_test.dart
+│   └── question_model_test.dart
+├── screens/
+│   ├── create_room_screen_test.dart     # 5 testów widgetów
+│   └── join_room_screen_test.dart       # 5 testów widgetów
+└── widget_test.dart                     # SplashScreen
 ```
 
 ## Uruchomienie
@@ -123,9 +149,23 @@ flutter run --dart-define-from-file=.env.json
 
 Logika biznesowa jest oddzielona od warstwy UI za pomocą `flutter_riverpod`. Każdy ekran ze stanem ma odpowiadający mu `AutoDisposeNotifier` w katalogu `providers/`, który przechowuje dane i obsługuje operacje (wywołania API, callbacki SignalR, timer). Ekrany są `ConsumerStatefulWidget` i obserwują stan przez `ref.watch` / `ref.listen` — nawigacja wywoływana jest z ekranu po zmianie stanu (np. `gameStartData != null` → przejście do `/game`).
 
+Notifiery nie komunikują się bezpośrednio z serwisami — korzystają z abstrakcji repozytoriów wstrzykiwanych przez Riverpod (`ref.read(roomRepositoryProvider)`), co umożliwia podmianę implementacji na mocki w testach.
+
+## Warstwa danych
+
+Aplikacja stosuje wzorzec **Repository + DataSource**:
+
+- **DataSource** (`data/datasources/`) — jedyne miejsce znające konkretny serwis HTTP. Łapie wyjątki i mapuje je na typy `AppFailure`.
+- **Repository** (`domain/repositories/`) — abstrakcyjny interfejs używany przez notifiery. Implementacja (`data/repositories/`) dodaje sprawdzenie połączenia przed wywołaniem datasource i rzuca `NetworkFailure` gdy brak sieci.
+- **AppFailure** (`core/errors/`) — sealed class z typami: `NetworkFailure`, `ServerFailure`, `NotFoundFailure`, `UnknownFailure`. Notifiery łapią konkretne typy i ustawiają odpowiedni stan UI.
+
 ## Architektura SignalR
 
-`GameHubService` utrzymuje jedno statyczne połączenie przez całą sesję gry (lobby → rozgrywka → podsumowanie → ponowne lobby). Callbacki SignalR są rejestrowane w Notifierach (nie w ekranach) i aktualizują stan, który ekrany obserwują przez `ref.listen`. Połączenie jest zamykane przez `AutoDisposeNotifier.onDispose` — z wyjątkiem przejść między ekranami, gdzie połączenie jest celowo zachowane.
+`GameHubService` utrzymuje jedno statyczne połączenie przez całą sesję gry (lobby → rozgrywka → podsumowanie → ponowne lobby). Dostęp do niego odbywa się przez `GameHubRepository` — interfejs wstrzykiwany do notifierów przez Riverpod. Callbacki SignalR są rejestrowane w Notifierach (nie w ekranach) i aktualizują stan, który ekrany obserwują przez `ref.listen`. Połączenie jest zamykane przez `AutoDisposeNotifier.onDispose` — z wyjątkiem przejść między ekranami, gdzie połączenie jest celowo zachowane.
+
+## Testy
+
+Testy widgetów w katalogu `test/screens/` używają `ProviderScope` z nadpisanymi providerami repozytoriów, co pozwala na izolowane testowanie ekranów bez rzeczywistych wywołań HTTP ani SignalR. Mocki w `test/mocks/` implementują interfejsy domenowe i pozwalają konfigurować zachowanie (sukces, `ServerFailure`, `NetworkFailure`).
 
 ## Autor
 
