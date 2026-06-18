@@ -8,7 +8,7 @@ Mobilna aplikacja quizowa **real-time multiplayer** zbudowana we Flutterze. Grac
 - Dołączanie przez **unikalny 6-znakowy kod**, **skan kodu QR** lub **udostępnienie linku**
 - Wyświetlanie kodu QR pokoju w lobby
 - Widoczna kategoria gry dla wszystkich graczy w lobby
-- Rozgrywka z pytaniami wielokrotnego wyboru i **lokalnym odliczaniem czasu (30s)**
+- Rozgrywka z pytaniami jednokrotnego wyboru i **lokalnym odliczaniem czasu (30s)**
 - Automatyczne przejście do następnego pytania po upływie czasu
 - **Ranking po każdym pytaniu** (wszystkich graczy)
 - **Podium po zakończeniu gry** (top 3)
@@ -24,6 +24,7 @@ Mobilna aplikacja quizowa **real-time multiplayer** zbudowana we Flutterze. Grac
 | Pakiet                        | Wersja | Zastosowanie                               |
 | ----------------------------- | ------ | ------------------------------------------ |
 | `go_router`                   | 17.2.2 | nawigacja deklaratywna                     |
+| `flutter_riverpod`            | 2.6.1  | zarządzanie stanem (Notifier/Provider)     |
 | `signalr_netcore`             | 1.3.5  | połączenie real-time z backendem           |
 | `http`                        | 1.2.0  | REST API (tworzenie/dołączanie do pokoju)  |
 | `qr_flutter`                  | 4.1.0  | generowanie kodu QR                        |
@@ -53,6 +54,12 @@ lib/
 ├── models/
 │   ├── player_model.dart
 │   └── question_model.dart
+├── providers/                       # warstwa stanu (Riverpod)
+│   ├── create_room_provider.dart    # logika tworzenia pokoju
+│   ├── join_room_provider.dart      # logika dołączania do pokoju
+│   ├── lobby_provider.dart          # stan lobby, callbacki SignalR
+│   ├── game_provider.dart           # stan gry, timer, callbacki SignalR
+│   └── summary_provider.dart        # stan podsumowania, restart gry
 ├── screens/
 │   ├── splash/                      # ekran startowy
 │   ├── home/                        # menu główne
@@ -112,9 +119,13 @@ flutter run --dart-define-from-file=.env.json
 - **POST_NOTIFICATIONS** — lokalne powiadomienia push (Android 13+, starsze wersje nie wymagają zgody)
 - **RECEIVE_BOOT_COMPLETED** — przywrócenie zaplanowanych powiadomień po restarcie urządzenia
 
+## Architektura stanu (Riverpod)
+
+Logika biznesowa jest oddzielona od warstwy UI za pomocą `flutter_riverpod`. Każdy ekran ze stanem ma odpowiadający mu `AutoDisposeNotifier` w katalogu `providers/`, który przechowuje dane i obsługuje operacje (wywołania API, callbacki SignalR, timer). Ekrany są `ConsumerStatefulWidget` i obserwują stan przez `ref.watch` / `ref.listen` — nawigacja wywoływana jest z ekranu po zmianie stanu (np. `gameStartData != null` → przejście do `/game`).
+
 ## Architektura SignalR
 
-`GameHubService` utrzymuje jedno statyczne połączenie przez całą sesję gry (lobby → rozgrywka → podsumowanie → ponowne lobby). Każdy ekran rejestruje swoje callbacki w `initState` i sprząta je w `dispose` — z wyjątkiem przejść między ekranami, gdzie połączenie i callbacki są celowo zachowane, by uniknąć utraty zdarzeń w trakcie nawigacji.
+`GameHubService` utrzymuje jedno statyczne połączenie przez całą sesję gry (lobby → rozgrywka → podsumowanie → ponowne lobby). Callbacki SignalR są rejestrowane w Notifierach (nie w ekranach) i aktualizują stan, który ekrany obserwują przez `ref.listen`. Połączenie jest zamykane przez `AutoDisposeNotifier.onDispose` — z wyjątkiem przejść między ekranami, gdzie połączenie jest celowo zachowane.
 
 ## Autor
 

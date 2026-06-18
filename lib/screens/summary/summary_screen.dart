@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:triviagame_flutter/core/services/game_hub_service.dart';
-import 'package:triviagame_flutter/core/services/room_api_service.dart';
+import 'package:triviagame_flutter/providers/summary_provider.dart';
 
-class SummaryScreen extends StatefulWidget {
+class SummaryScreen extends ConsumerStatefulWidget {
   final List<Map<String, dynamic>> scores;
   final String? roomCode;
   final String? playerUuid;
@@ -24,97 +24,53 @@ class SummaryScreen extends StatefulWidget {
   });
 
   @override
-  State<SummaryScreen> createState() => _SummaryScreenState();
+  ConsumerState<SummaryScreen> createState() => _SummaryScreenState();
 }
 
-class _SummaryScreenState extends State<SummaryScreen> {
-  bool _isRestarting = false;
-  bool _navigatingToLobby = false;
-  String? _errorMessage;
-
-  List<Map<String, dynamic>> _categories = [];
-  int? _selectedCategoryId;
-
+class _SummaryScreenState extends ConsumerState<SummaryScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedCategoryId = widget.categoryId;
-    if (widget.isHost) _loadCategories();
-    _setupCallbacks();
-  }
-
-  Future<void> _loadCategories() async {
-    try {
-      final cats = await RoomApiService.getCategories();
-      if (mounted) setState(() => _categories = cats);
-    } catch (_) {}
-  }
-
-  void _setupCallbacks() {
-    GameHubService.onGameRestarted = (data) {
-      if (!mounted) return;
-      _navigatingToLobby = true;
-      final members = (data['members'] as List<dynamic>)
-          .map((m) => m as Map<String, dynamic>)
-          .toList();
-      String? catName;
-      try {
-        final cat = data['category'];
-        catName = cat is Map
-            ? cat['name'] as String?
-            : (data['categoryName'] ?? data['category_name']) as String?;
-      } catch (_) {}
-      context.go('/lobby', extra: {
-        'roomCode': data['joinCode'] as String,
-        'nickname': widget.nickname,
-        'isHost': widget.isHost,
-        'playerUuid': widget.playerUuid,
-        'categoryId': null,
-        'categoryName': catName,
-        'members': members,
-      });
-    };
-  }
-
-  Future<void> _playAgain() async {
-    if (widget.roomCode == null || widget.playerUuid == null) return;
-    setState(() {
-      _isRestarting = true;
-      _errorMessage = null;
-    });
-    try {
-      await GameHubService.restartGame(
-        widget.roomCode!,
-        widget.playerUuid!,
-        _selectedCategoryId,
-      );
-    } catch (e) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        setState(() {
-          _isRestarting = false;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
-        });
+        ref.read(summaryProvider.notifier).init(
+              widget.roomCode,
+              widget.playerUuid,
+              widget.categoryId,
+              widget.isHost,
+            );
       }
-    }
+    });
   }
 
   void _leaveGame() {
-    GameHubService.clearCallbacks();
-    GameHubService.disconnect();
     context.go('/home');
   }
 
   @override
-  void dispose() {
-    if (!_navigatingToLobby) {
-      GameHubService.clearCallbacks();
-      GameHubService.disconnect();
-    }
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final state = ref.watch(summaryProvider);
+
+    ref.listen(summaryProvider.select((s) => s.restartedData), (prev, next) {
+      if (next != null) {
+        String? catName;
+        try {
+          final cat = next['category'];
+          catName = cat is Map
+              ? cat['name'] as String?
+              : (next['categoryName'] ?? next['category_name']) as String?;
+        } catch (_) {}
+        context.go('/lobby', extra: {
+          'roomCode': next['joinCode'] as String,
+          'nickname': widget.nickname,
+          'isHost': widget.isHost,
+          'playerUuid': widget.playerUuid,
+          'categoryId': null,
+          'categoryName': catName,
+        });
+      }
+    });
+
     final sorted = [...widget.scores]
       ..sort((a, b) => (b['score'] as int).compareTo(a['score'] as int));
     final top3 = sorted.take(3).toList();
@@ -131,7 +87,8 @@ class _SummaryScreenState extends State<SummaryScreen> {
         ),
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Column(
               children: [
                 Text(
@@ -181,7 +138,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     child: ListView.separated(
                       padding: const EdgeInsets.all(16),
                       itemCount: sorted.length,
-                      separatorBuilder: (context, index) => const Divider(),
+                      separatorBuilder: (_, _) => const Divider(),
                       itemBuilder: (context, index) {
                         final player = sorted[index];
                         return Row(
@@ -191,7 +148,8 @@ class _SummaryScreenState extends State<SummaryScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color:
+                                    Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -216,11 +174,11 @@ class _SummaryScreenState extends State<SummaryScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                if (_errorMessage != null)
+                if (state.errorMessage != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
-                      _errorMessage!,
+                      state.errorMessage!,
                       style: TextStyle(
                           color: Theme.of(context).colorScheme.error,
                           fontSize: 13),
@@ -236,9 +194,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
                 ),
                 if (widget.isHost && widget.roomCode != null) ...[
                   const SizedBox(height: 8),
-                  if (_categories.isNotEmpty)
+                  if (state.categories.isNotEmpty)
                     DropdownButtonFormField<int?>(
-                      initialValue: _selectedCategoryId,
+                      initialValue: state.selectedCategoryId,
                       isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Kategoria na następną grę',
@@ -250,20 +208,23 @@ class _SummaryScreenState extends State<SummaryScreen> {
                           value: null,
                           child: Text('Dowolna kategoria'),
                         ),
-                        ..._categories.map((cat) => DropdownMenuItem<int?>(
+                        ...state.categories.map((cat) => DropdownMenuItem<int?>(
                               value: cat['id'] as int,
                               child: Text(cat['name'] as String),
                             )),
                       ],
-                      onChanged: _isRestarting
+                      onChanged: state.isRestarting
                           ? null
-                          : (val) => setState(() => _selectedCategoryId = val),
+                          : (val) => ref
+                              .read(summaryProvider.notifier)
+                              .selectCategory(val),
                     ),
                   const SizedBox(height: 8),
-                  _isRestarting
+                  state.isRestarting
                       ? const CircularProgressIndicator()
                       : OutlinedButton(
-                          onPressed: _playAgain,
+                          onPressed: () =>
+                              ref.read(summaryProvider.notifier).playAgain(),
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 52),
                             side: BorderSide(
@@ -351,7 +312,8 @@ class _PodiumItem extends StatelessWidget {
             color: Theme.of(context).colorScheme.primary.withValues(
                   alpha: place == 1 ? 1.0 : place == 2 ? 0.7 : 0.5,
                 ),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(8)),
           ),
           child: Center(
             child: Text(
